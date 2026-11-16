@@ -77,16 +77,36 @@ ${issues.map((i) => `- [${i.severity.toUpperCase()}] ${i.displayName}: ${i.descr
         </h1>
       </div>
 
-      {/* Top Banner Card: Validation failed */}
+      {/* Top Banner Card */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-card flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Validation failed</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            {criticalCount > 0
+              ? 'Validation failed'
+              : warningsCount > 0
+              ? 'Validation needs review'
+              : 'Validation passed'}
+          </h2>
           <p className="text-sm text-gray-600 mt-1">
-            AI validation completed. Resolve the {criticalCount} critical issues before submitting this shipment.
+            {criticalCount > 0
+              ? `AI validation completed. Resolve the ${criticalCount} critical issues before submitting this shipment.`
+              : warningsCount > 0
+              ? `AI validation completed with ${warningsCount} warnings. Document exceptions or update line items before submission.`
+              : 'All validation checks cleared successfully. Ready for customs clearance filing.'}
           </p>
         </div>
         <div>
-          <Badge variant="fail" label="Fail" />
+          {criticalCount > 0 ? (
+            <Badge variant="fail" label="Fail" />
+          ) : warningsCount > 0 ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+              Needs Review
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              Passed
+            </span>
+          )}
         </div>
       </div>
 

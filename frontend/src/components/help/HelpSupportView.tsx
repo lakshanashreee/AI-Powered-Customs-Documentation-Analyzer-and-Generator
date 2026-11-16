@@ -7,6 +7,7 @@ import {
   Send,
   Bot
 } from 'lucide-react';
+import { ApiService } from '../../services/api';
 
 interface FaqItem {
   id: string;
@@ -134,7 +135,7 @@ Open Validation results to review each highlighted field. Confirm the source inv
     setExpandedFaqId(expandedFaqId === id ? null : id);
   };
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputQuestion).trim();
     if (!text) return;
 
@@ -149,36 +150,31 @@ Open Validation results to review each highlighted field. Confirm the source inv
     setInputQuestion('');
     setIsTyping(true);
 
-    // Simulated Intelligent Assistant Response
-    setTimeout(() => {
-      let reply = '';
-      const lower = text.toLowerCase();
-
-      if (lower.includes('missing') || lower.includes('fix')) {
-        reply =
-          'To fix missing fields such as HS codes or consignee details, open the "Review & fix" workbench. Click the flagged field in the Issues Found list, choose "Edit manually", enter the verified value, and click "Apply Correction". The clearance readiness score will update instantly.';
-      } else if (lower.includes('file') || lower.includes('upload') || lower.includes('format')) {
-        reply =
-          'You can upload Commercial Invoices, Packing Lists, and Air Waybills in PDF, JPG, and PNG formats up to 25 MB per document. PaddleOCR will extract the invoice number, line items, buyer/seller, and totals automatically.';
-      } else if (lower.includes('weight') || lower.includes('mismatch')) {
-        reply =
-          'Weight discrepancies occur when the invoice net weight does not match the transport gross weight. If the entered weight retains net weight (e.g., 96 kg vs 118 kg invoice), provide an explanation note in Step 4 under "Before you submit" to certify packaging tare and unlock customs filing.';
-      } else {
-        reply =
-          'I have analyzed your query with our customs compliance knowledge base. You can review all extracted fields against your commercial invoice directly in the interactive document visualizer on the Review & Fix page. Let me know if you need specific guidance on tariff classifications or customs declarations.';
-      }
-
+    try {
+      const res = await ApiService.askAiAssistant(text);
       setMessages((prev) => [
         ...prev,
         {
           id: `asst-${Date.now()}`,
           sender: 'assistant',
-          text: reply,
+          text: res.response,
           timestamp: 'Just now'
         }
       ]);
+    } catch {
+      // Fallback
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `asst-${Date.now()}`,
+          sender: 'assistant',
+          text: 'I have analyzed your query with our customs compliance knowledge base. You can review all extracted fields against your commercial invoice directly in the interactive document visualizer on the Review & Fix page.',
+          timestamp: 'Just now'
+        }
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   };
 
   const handleClearChat = () => {

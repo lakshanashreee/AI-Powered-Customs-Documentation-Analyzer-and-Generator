@@ -3,8 +3,12 @@ import { Package, BarChart3, HelpCircle, ChevronDown, User, LogOut } from 'lucid
 import { useShipment } from '../../context/ShipmentContext';
 
 export const Header: React.FC = () => {
-  const { activeNavTab, setActiveNavTab, setStep } = useShipment();
+  const { activeNavTab, setActiveNavTab, setStep, authUser, logoutUser } = useShipment();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+
+  const userInitials = authUser?.fullName
+    ? authUser.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'PS';
 
   return (
     <header className="bg-ups-brown text-white sticky top-0 z-50 shadow-md">
@@ -86,19 +90,19 @@ export const Header: React.FC = () => {
                 <div className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center ${
                   activeNavTab === 'account' ? 'bg-ups-brown text-white' : 'bg-white text-ups-brown'
                 }`}>
-                  PS
+                  {userInitials}
                 </div>
                 <span className="font-medium hidden md:inline">Account</span>
                 <ChevronDown className="w-3.5 h-3.5 opacity-80" />
               </button>
 
               {showAccountMenu && (
-                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white text-gray-800 shadow-2xl border border-gray-100 py-2 z-50 text-xs">
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-gray-800 shadow-2xl border border-gray-100 py-2 z-50 text-xs">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="font-bold text-gray-900 text-sm">Priya Sharma</p>
-                    <p className="text-[11px] text-gray-500 truncate">priya.sharma@meridiantrade.co.uk</p>
+                    <p className="font-bold text-gray-900 text-sm">{authUser?.fullName || 'Priya Sharma'}</p>
+                    <p className="text-[11px] text-gray-500 truncate">{authUser?.email || 'priya.sharma@meridiantrade.co.uk'}</p>
                     <span className="inline-block mt-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      ✓ Verified Shipper
+                      ✓ {authUser?.role || 'Verified Shipper'}
                     </span>
                   </div>
 
@@ -118,7 +122,7 @@ export const Header: React.FC = () => {
                   <button 
                     onClick={() => {
                       setShowAccountMenu(false);
-                      alert('Signed out successfully');
+                      logoutUser();
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2.5 font-medium"
                   >

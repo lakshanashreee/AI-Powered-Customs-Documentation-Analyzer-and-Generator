@@ -6,145 +6,16 @@ import {
   Eye,
   X,
   RotateCcw,
-  ChevronDown
+  ChevronDown,
+  Plus
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-
-export interface ReportItem {
-  id: string;
-  reportId: string;
-  shipmentId: string;
-  invoiceName: string;
-  generatedDateTime: string;
-  route: string;
-  status: 'Passed' | 'Needs Review' | 'Failed';
-  issuesCount: number;
-  seller: string;
-  buyer: string;
-  lineItems: string;
-  readinessScore: number;
-  criticalIssues: number;
-  warnings: number;
-  passedChecks: number;
-  detectedIssues: string[];
-  suggestedCorrections: string[];
-}
-
-const MOCK_REPORTS: ReportItem[] = [
-  {
-    id: '1',
-    reportId: 'RPT-0412',
-    shipmentId: '#0412',
-    invoiceName: 'invoice_0412.pdf',
-    generatedDateTime: '2026-11-05 09:42',
-    route: 'USA → CAN',
-    status: 'Passed',
-    issuesCount: 0,
-    seller: 'ABC Exports Ltd.',
-    buyer: 'Global Traders Inc.',
-    lineItems: '1 SKU · Leather Handbags',
-    readinessScore: 94,
-    criticalIssues: 0,
-    warnings: 0,
-    passedChecks: 14,
-    detectedIssues: ['All validation checks cleared successfully.'],
-    suggestedCorrections: ['Ready for customs brokerage electronic entry.']
-  },
-  {
-    id: '2',
-    reportId: 'RPT-0411',
-    shipmentId: '#0411',
-    invoiceName: 'invoice_0411.pdf',
-    generatedDateTime: '2026-11-05 08:17',
-    route: 'USA → MEX',
-    status: 'Needs Review',
-    issuesCount: 3,
-    seller: 'Northwind Apparel',
-    buyer: 'Monterrey Retail S.A.',
-    lineItems: '1 SKU',
-    readinessScore: 82,
-    criticalIssues: 0,
-    warnings: 3,
-    passedChecks: 11,
-    detectedIssues: [
-      'Gross weight mismatch between invoice and shipment entry',
-      'Country of origin is missing from the invoice line item',
-      'Harmonized code is incomplete'
-    ],
-    suggestedCorrections: [
-      'Review the gross weight discrepancy before submission',
-      'Add country of origin to the invoice line item',
-      'Complete the Harmonized code for the declared item'
-    ]
-  },
-  {
-    id: '3',
-    reportId: 'RPT-0410',
-    shipmentId: '#0410',
-    invoiceName: 'invoice_0410.pdf',
-    generatedDateTime: '2026-11-04 16:54',
-    route: 'USA → CAN',
-    status: 'Failed',
-    issuesCount: 2,
-    seller: 'Apex Precision Tools',
-    buyer: 'Ontario Machinery Corp.',
-    lineItems: '3 SKUs · CNC Carbide Bits',
-    readinessScore: 54,
-    criticalIssues: 2,
-    warnings: 1,
-    passedChecks: 9,
-    detectedIssues: [
-      'Declared value is below statutory tariff threshold ($1,200 vs $3,400)',
-      'Missing EORI and Canadian Business Number (BN9)',
-      'Inconsistent currency symbols between header and subtotal'
-    ],
-    suggestedCorrections: [
-      'Reconcile invoice total with purchase contract before customs filing',
-      'Enter verified Canadian Business Number of importer',
-      'Standardize currency to CAD or USD across all line items'
-    ]
-  },
-  {
-    id: '4',
-    reportId: 'RPT-0409',
-    shipmentId: '#0409',
-    invoiceName: 'invoice_0409.pdf',
-    generatedDateTime: '2026-11-04 14:21',
-    route: 'USA → GBR',
-    status: 'Passed',
-    issuesCount: 0,
-    seller: 'Meridian Trade Ltd.',
-    buyer: 'Thames Logistics UK',
-    lineItems: '4 SKUs · Cotton Textiles',
-    readinessScore: 98,
-    criticalIssues: 0,
-    warnings: 0,
-    passedChecks: 14,
-    detectedIssues: ['All line items verified with UK Tariff Schedule.'],
-    suggestedCorrections: ['No corrections needed.']
-  },
-  {
-    id: '5',
-    reportId: 'RPT-0408',
-    shipmentId: '#0408',
-    invoiceName: 'invoice_0408.pdf',
-    generatedDateTime: '2026-11-04 11:06',
-    route: 'USA → CAN',
-    status: 'Needs Review',
-    issuesCount: 1,
-    seller: 'BioHealth Instruments',
-    buyer: 'Quebec MedTech Inc.',
-    lineItems: '2 SKUs · Diagnostic Sensors',
-    readinessScore: 88,
-    criticalIssues: 0,
-    warnings: 1,
-    passedChecks: 13,
-    detectedIssues: ['Medical device classification requires FDA/Health Canada license citation.'],
-    suggestedCorrections: ['Attach Health Canada establishment license confirmation note.']
-  }
-];
+import { useShipment } from '../../context/ShipmentContext';
+import { ReportItem } from '../../types';
 
 export const GeneratedReportsView: React.FC = () => {
+  const { reports, setActiveNavTab, setStep } = useShipment();
+
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('All dates');
@@ -155,6 +26,15 @@ export const GeneratedReportsView: React.FC = () => {
   // Selected report for Slide-Over Drawer
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
   const [downloadToast, setDownloadToast] = useState<string | null>(null);
+
+  // Dynamic Statistics computed from actual reports in database/state
+  const stats = useMemo(() => {
+    const total = reports.length;
+    const passed = reports.filter((r) => r.status === 'Passed').length;
+    const needsReview = reports.filter((r) => r.status === 'Needs Review').length;
+    const failed = reports.filter((r) => r.status === 'Failed').length;
+    return { total, passed, needsReview, failed };
+  }, [reports]);
 
   // Applied Filter Counter
   const appliedFiltersCount = useMemo(() => {
@@ -168,8 +48,7 @@ export const GeneratedReportsView: React.FC = () => {
 
   // Filtered reports
   const filteredReports = useMemo(() => {
-    return MOCK_REPORTS.filter((report) => {
-      // Search matching reportId, shipmentId, or invoiceName
+    return reports.filter((report) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchesQuery =
@@ -181,20 +60,17 @@ export const GeneratedReportsView: React.FC = () => {
         if (!matchesQuery) return false;
       }
 
-      // Status
       if (statusFilter !== 'All' && report.status !== statusFilter) {
         return false;
       }
 
-      // Route Destination filter
       if (destinationFilter !== 'All') {
-        const [, dest] = report.route.split(' → ');
-        if (dest !== destinationFilter) return false;
+        if (!report.route.toLowerCase().includes(destinationFilter.toLowerCase())) return false;
       }
 
       return true;
     });
-  }, [searchQuery, statusFilter, destinationFilter]);
+  }, [reports, searchQuery, statusFilter, destinationFilter]);
 
   const handleClearFilters = () => {
     setSearchQuery('');
@@ -218,63 +94,59 @@ export const GeneratedReportsView: React.FC = () => {
       doc.text(`Invoice: ${report.invoiceName}`, 14, 42);
       doc.text(`Generated: ${report.generatedDateTime}`, 14, 49);
       doc.text(`Route: ${report.route}`, 14, 56);
-      doc.text(`Status: ${report.status} | Readiness: ${report.readinessScore}/100`, 14, 63);
+      doc.text(`Status: ${report.status}`, 14, 63);
+      doc.text(`Readiness Score: ${report.readinessScore} / 100`, 14, 70);
 
       doc.setDrawColor(220, 220, 220);
-      doc.line(14, 70, 196, 70);
+      doc.line(14, 76, 196, 76);
 
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
-      doc.text('Invoice Details:', 14, 80);
+      doc.text('Invoice & Entity Particulars', 14, 85);
       doc.setFontSize(10);
-      doc.setTextColor(70, 70, 70);
-      doc.text(`Seller: ${report.seller}`, 14, 88);
-      doc.text(`Buyer: ${report.buyer}`, 14, 95);
-      doc.text(`Line Items: ${report.lineItems}`, 14, 102);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Seller: ${report.seller}`, 14, 93);
+      doc.text(`Buyer / Consignee: ${report.buyer}`, 14, 100);
+      doc.text(`Declared Cargo: ${report.lineItems}`, 14, 107);
 
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
-      doc.text('Detected Issues & Validation Findings:', 14, 115);
-      let y = 125;
+      doc.text('Audit Findings & Validation Notes', 14, 120);
+      let y = 128;
       report.detectedIssues.forEach((issue) => {
-        doc.setFontSize(10);
-        doc.setTextColor(180, 50, 50);
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
         doc.text(`• ${issue}`, 14, y);
-        y += 8;
+        y += 7;
       });
 
-      y += 4;
-      doc.setFontSize(12);
-      doc.setTextColor(20, 20, 20);
-      doc.text('Suggested Corrections:', 14, y);
-      y += 10;
-      report.suggestedCorrections.forEach((corr) => {
-        doc.setFontSize(10);
-        doc.setTextColor(40, 120, 50);
-        doc.text(`• ${corr}`, 14, y);
-        y += 8;
-      });
-
-      doc.save(`${report.reportId}_Customs_Validation.pdf`);
+      doc.save(`${report.reportId}_Customs_Audit_Report.pdf`);
       setDownloadToast(`Downloaded ${report.reportId}.pdf`);
       setTimeout(() => setDownloadToast(null), 3000);
     } catch (e) {
       console.error(e);
-      alert('Error generating PDF');
+      alert('Unable to generate PDF');
     }
   };
 
   const handleDownloadReportCsv = (report: ReportItem) => {
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [
-        'REPORT ID,SHIPMENT ID,INVOICE NAME,DATE,ROUTE,STATUS,SCORE,ISSUES',
-        `"${report.reportId}","${report.shipmentId}","${report.invoiceName}","${report.generatedDateTime}","${report.route}","${report.status}","${report.readinessScore}","${report.detectedIssues.join('; ')}"`
-      ].join('\n');
+    const headers = ['REPORT ID', 'SHIPMENT ID', 'INVOICE NAME', 'DATE', 'ROUTE', 'STATUS', 'READINESS', 'SELLER', 'BUYER'];
+    const row = [
+      `"${report.reportId}"`,
+      `"${report.shipmentId}"`,
+      `"${report.invoiceName}"`,
+      `"${report.generatedDateTime}"`,
+      `"${report.route}"`,
+      `"${report.status}"`,
+      `"${report.readinessScore}"`,
+      `"${report.seller}"`,
+      `"${report.buyer}"`
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), row.join(',')].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${report.reportId}_Customs_Report.csv`);
+    link.setAttribute('download', `${report.reportId}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -284,7 +156,8 @@ export const GeneratedReportsView: React.FC = () => {
   };
 
   const handleExportAllCsv = () => {
-    const headers = ['REPORT ID', 'SHIPMENT ID', 'INVOICE NAME', 'DATE', 'ROUTE', 'STATUS', 'ISSUES COUNT'];
+    if (filteredReports.length === 0) return;
+    const headers = ['REPORT ID', 'SHIPMENT ID', 'INVOICE NAME', 'DATE', 'ROUTE', 'STATUS', 'ISSUES COUNT', 'READINESS'];
     const rows = filteredReports.map((r) => [
       `"${r.reportId}"`,
       `"${r.shipmentId}"`,
@@ -292,13 +165,14 @@ export const GeneratedReportsView: React.FC = () => {
       `"${r.generatedDateTime}"`,
       `"${r.route}"`,
       `"${r.status}"`,
-      `"${r.issuesCount}"`
+      `"${r.issuesCount}"`,
+      `"${r.readinessScore}"`
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'UPS_Generated_Customs_Reports.csv');
+    link.setAttribute('download', 'UPS_Customs_Reports.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -325,7 +199,8 @@ export const GeneratedReportsView: React.FC = () => {
 
         <button
           onClick={handleExportAllCsv}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs shadow-sm transition-all self-start sm:self-auto"
+          disabled={reports.length === 0}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs shadow-sm transition-all disabled:opacity-40 self-start sm:self-auto"
         >
           <Download className="w-3.5 h-3.5 text-gray-600" />
           <span>Export CSV</span>
@@ -339,13 +214,13 @@ export const GeneratedReportsView: React.FC = () => {
         </div>
       )}
 
-      {/* 4 Summary Metric Cards */}
+      {/* 4 Summary Metric Cards (Computed Dynamically from DB/State) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Reports */}
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-card flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 block">Total Reports</span>
-            <span className="text-3xl font-extrabold text-gray-950 mt-1 block">128</span>
+            <span className="text-3xl font-extrabold text-gray-950 mt-1 block">{stats.total}</span>
           </div>
           <div className="w-10 h-10 rounded-full bg-amber-50 text-ups-brown flex items-center justify-center">
             <FileText className="w-5 h-5 text-gray-600" />
@@ -356,7 +231,7 @@ export const GeneratedReportsView: React.FC = () => {
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-card flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 block">Passed</span>
-            <span className="text-3xl font-extrabold text-emerald-700 mt-1 block">84</span>
+            <span className="text-3xl font-extrabold text-emerald-700 mt-1 block">{stats.passed}</span>
           </div>
           <div className="self-center">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -370,7 +245,7 @@ export const GeneratedReportsView: React.FC = () => {
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-card flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 block">Needs Review</span>
-            <span className="text-3xl font-extrabold text-amber-700 mt-1 block">31</span>
+            <span className="text-3xl font-extrabold text-amber-700 mt-1 block">{stats.needsReview}</span>
           </div>
           <div className="self-center">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100/90 text-amber-900 border border-amber-300">
@@ -384,7 +259,7 @@ export const GeneratedReportsView: React.FC = () => {
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-card flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 block">Failed</span>
-            <span className="text-3xl font-extrabold text-red-600 mt-1 block">13</span>
+            <span className="text-3xl font-extrabold text-red-600 mt-1 block">{stats.failed}</span>
           </div>
           <div className="self-center">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
@@ -402,7 +277,6 @@ export const GeneratedReportsView: React.FC = () => {
           <span className="text-xs text-gray-500">{appliedFiltersCount} applied</span>
         </div>
 
-        {/* Simplified Filters Grid: Search, Date, Status, Destination & Reset */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
           {/* Search Input */}
           <div className="lg:col-span-4">
@@ -467,10 +341,10 @@ export const GeneratedReportsView: React.FC = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white appearance-none"
               >
                 <option value="All">All destinations</option>
-                <option value="CAN">Canada (CAN)</option>
-                <option value="MEX">Mexico (MEX)</option>
-                <option value="GBR">United Kingdom (GBR)</option>
                 <option value="USA">USA</option>
+                <option value="Canada">Canada</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Mexico">Mexico</option>
               </select>
               <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -497,9 +371,7 @@ export const GeneratedReportsView: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-gray-900">Reports</h2>
             <span className="text-xs text-gray-500">
-              {filteredReports.length === 0
-                ? '0 matching reports · 128 total'
-                : `${filteredReports.length} of 128 total records`}
+              {filteredReports.length} matching of {reports.length} total records
             </span>
           </div>
 
@@ -521,9 +393,30 @@ export const GeneratedReportsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Table or Empty State */}
-        {filteredReports.length === 0 ? (
-          /* Empty State matching Image 2 */
+        {/* Empty State when 0 reports exist */}
+        {reports.length === 0 ? (
+          <div className="py-20 text-center px-4 flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-700 mb-4 border border-amber-200">
+              <FileText className="w-8 h-8 text-amber-700" />
+            </div>
+            <h3 className="text-base font-bold text-gray-900">
+              No customs validation reports generated yet
+            </h3>
+            <p className="text-xs text-gray-500 mt-1 max-w-md">
+              Upload a commercial invoice in the Shipments workflow and submit for customs clearance to generate your first audit-ready compliance certificate.
+            </p>
+            <button
+              onClick={() => {
+                setActiveNavTab('shipments');
+                setStep(1);
+              }}
+              className="mt-5 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-ups-gold hover:bg-ups-gold-hover text-ups-brown font-extrabold text-xs shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Start New Shipment Check</span>
+            </button>
+          </div>
+        ) : filteredReports.length === 0 ? (
           <div className="py-20 text-center px-4 flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 mb-4">
               <Search className="w-8 h-8 text-gray-400" />
@@ -543,7 +436,6 @@ export const GeneratedReportsView: React.FC = () => {
             </button>
           </div>
         ) : (
-          /* Reports Data Table */
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-gray-50 text-gray-500 font-semibold uppercase tracking-wider text-[10px] border-b border-gray-200">
@@ -624,36 +516,22 @@ export const GeneratedReportsView: React.FC = () => {
           </div>
         )}
 
-        {/* Pagination Footer */}
-        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <div>
-            Showing 1–{filteredReports.length} of 128 reports
+        {/* Pagination Footer (Only if records exist) */}
+        {filteredReports.length > 0 && (
+          <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+            <div>
+              Showing 1–{filteredReports.length} of {reports.length} reports
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-gray-900 px-2 py-1 bg-amber-100 rounded">1</span>
+            </div>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-gray-900 px-2 py-1 bg-amber-100 rounded">1</span>
-            <button className="px-2 py-1 hover:text-black">2</button>
-            <button className="px-2 py-1 hover:text-black">3</button>
-            <span>...</span>
-            <button className="px-2 py-1 hover:text-black">26</button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold">
-              <RotateCcw className="w-3 h-3" />
-              <span>Previous</span>
-            </button>
-            <button className="px-4 py-1.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold">
-              Next
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Slide-Over Drawer: Report Details (matches Image 3) */}
+      {/* Slide-Over Drawer: Report Details */}
       {selectedReport && (
         <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setSelectedReport(null)}
@@ -662,7 +540,6 @@ export const GeneratedReportsView: React.FC = () => {
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
             <div className="w-screen max-w-md bg-white shadow-2xl border-l border-gray-200 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-300">
               <div className="p-6 space-y-6">
-                {/* Header */}
                 <div className="flex items-start justify-between pb-4 border-b border-gray-200">
                   <div>
                     <div className="flex items-center gap-2">
@@ -697,7 +574,6 @@ export const GeneratedReportsView: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Invoice Information Section */}
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Invoice information
@@ -722,7 +598,6 @@ export const GeneratedReportsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Validation findings Section */}
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Validation findings
@@ -736,7 +611,7 @@ export const GeneratedReportsView: React.FC = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-gray-500 block">Critical issues</span>
+                      <span className="text-[10px] text-gray-500 block">Critical</span>
                       <span className="text-base font-extrabold text-red-600">
                         {selectedReport.criticalIssues}
                       </span>
@@ -748,7 +623,7 @@ export const GeneratedReportsView: React.FC = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-gray-500 block">Passed checks</span>
+                      <span className="text-[10px] text-gray-500 block">Passed</span>
                       <span className="text-base font-extrabold text-emerald-600">
                         {selectedReport.passedChecks}
                       </span>
@@ -756,7 +631,6 @@ export const GeneratedReportsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Detected issues Section */}
                 <div className="space-y-2.5">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Detected issues
@@ -766,45 +640,26 @@ export const GeneratedReportsView: React.FC = () => {
                       <div key={idx} className="flex items-start gap-2 text-xs">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 flex-shrink-0 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                          Needs Review
+                          Issue
                         </span>
-                        <span className="text-gray-800 leading-relaxed">{issue}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Suggested corrections Section */}
-                <div className="space-y-2.5">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Suggested corrections
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedReport.suggestedCorrections.map((corr, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 flex-shrink-0 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                          Needs Review
-                        </span>
-                        <span className="text-gray-800 leading-relaxed">{corr}</span>
+                        <span className="text-gray-700 leading-snug">{issue}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Drawer Actions */}
-              <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3">
+              <div className="p-6 border-t border-gray-200 bg-gray-50/50 flex items-center gap-3">
                 <button
                   onClick={() => handleDownloadReportPdf(selectedReport)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs shadow-sm transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs shadow-xs transition-colors"
                 >
                   <Download className="w-4 h-4 text-gray-600" />
                   <span>Download PDF</span>
                 </button>
                 <button
                   onClick={() => handleDownloadReportCsv(selectedReport)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs shadow-sm transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs shadow-xs transition-colors"
                 >
                   <Download className="w-4 h-4 text-gray-600" />
                   <span>Download CSV</span>
@@ -814,12 +669,6 @@ export const GeneratedReportsView: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Footer Disclaimer */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-400 border-t border-gray-200 gap-2">
-        <span>Readiness is an AI review indicator, not a guarantee of customs clearance or regulatory compliance.</span>
-        <span>UPS CrossBorder Ready</span>
-      </div>
     </div>
   );
 };

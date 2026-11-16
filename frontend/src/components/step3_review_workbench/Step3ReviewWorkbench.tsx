@@ -21,6 +21,7 @@ import { ManualEditModal } from '../common/ManualEditModal';
 export const Step3ReviewWorkbench: React.FC = () => {
   const {
     shipmentDetails,
+    documents,
     issues,
     selectedIssue,
     selectedIssueId,
@@ -41,6 +42,11 @@ export const Step3ReviewWorkbench: React.FC = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const quantityIssue = issues.find((i) => i.field === 'quantity');
+  const weightIssue = issues.find((i) => i.field === 'gross_weight');
+  const hsCodeIssue = issues.find((i) => i.field === 'hs_code');
+  const decValIssue = issues.find((i) => i.field === 'declared_value');
 
   // Filter issues
   const filteredIssues = issues.filter((issue) => {
@@ -364,7 +370,9 @@ export const Step3ReviewWorkbench: React.FC = () => {
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-ups-gold-dark" />
               <h2 className="text-base font-bold text-gray-900">Invoice preview</h2>
-              <span className="text-xs text-gray-500 font-mono">invoice_0412.pdf · Page 1</span>
+              <span className="text-xs text-gray-500 font-mono">
+                {documents[0]?.fileName || (shipmentDetails.invoiceNumber ? `${shipmentDetails.invoiceNumber}.pdf` : 'commercial_invoice.pdf')} · Extracted View
+              </span>
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
               Highlighted fields correspond to the issues above. Click any highlight to jump to that issue.
@@ -389,8 +397,12 @@ export const Step3ReviewWorkbench: React.FC = () => {
               <p className="text-[11px] text-gray-500">Document Scan · Customs Manifest</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-bold text-gray-700">Invoice: INV-0412</span>
-              <p className="text-[11px] text-gray-500">Date: April 12, 2026</p>
+              <span className="font-mono font-bold text-gray-700">
+                Invoice: {shipmentDetails.invoiceNumber || `INV-${shipmentDetails.shipmentNumber}`}
+              </span>
+              <p className="text-[11px] text-gray-500">
+                Date: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
             </div>
           </div>
 
@@ -398,18 +410,18 @@ export const Step3ReviewWorkbench: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600 border-b border-gray-200 pb-3">
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Seller:</span>
-              <span className="font-semibold text-gray-800">ABC Exports Ltd.</span>
-              <p className="text-[10px] text-gray-500">12 Industrial Estate, New Delhi, India</p>
+              <span className="font-semibold text-gray-800">{shipmentDetails.seller || 'Apex Global Supplies'}</span>
+              <p className="text-[10px] text-gray-500">74 Export Zone, Phase II</p>
             </div>
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Buyer / Consignee:</span>
-              <span className="font-semibold text-gray-800">Global Traders Inc.</span>
-              <p className="text-[10px] text-gray-500">450 Logistics Blvd, Dallas, TX, USA</p>
+              <span className="font-semibold text-gray-800">{shipmentDetails.buyer || 'TransGlobal Logistics Inc.'}</span>
+              <p className="text-[10px] text-gray-500">500 Gateway Terminal Blvd</p>
             </div>
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Line Items:</span>
-              <span className="font-semibold text-gray-800">Women Leather Handbags</span>
-              <p className="text-[10px] text-gray-500">Origin: India · Incoterms: CIF</p>
+              <span className="font-semibold text-gray-800">{shipmentDetails.productDescription || 'Commercial Merchandise'}</span>
+              <p className="text-[10px] text-gray-500">Origin: {shipmentDetails.originCountry} · Dest: {shipmentDetails.destinationCountry}</p>
             </div>
           </div>
 
@@ -417,58 +429,78 @@ export const Step3ReviewWorkbench: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
             {/* Quantity box */}
             <div
-              onClick={() => setSelectedIssueId('issue-4')}
+              onClick={() => quantityIssue && setSelectedIssueId(quantityIssue.id)}
               className={`p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                selectedIssueId === 'issue-4'
+                quantityIssue && selectedIssueId === quantityIssue.id
                   ? 'border-ups-gold bg-amber-100/60 ring-2 ring-ups-gold shadow-sm'
                   : 'border-amber-300 bg-amber-50/50 hover:bg-amber-100/40'
               }`}
             >
               <span className="text-[10px] font-bold text-gray-500 uppercase block">Quantity</span>
-              <span className="text-base font-extrabold text-gray-900">240</span>
-              <span className="text-[10px] text-amber-800 block mt-0.5">Entered: 204</span>
+              <span className="text-base font-extrabold text-gray-900">
+                {quantityIssue ? quantityIssue.invoiceValue : shipmentDetails.quantity}
+              </span>
+              <span className="text-[10px] text-amber-800 block mt-0.5">
+                {quantityIssue ? `Entered: ${quantityIssue.enteredValue}` : 'Match'}
+              </span>
             </div>
 
             {/* Gross weight box */}
             <div
-              onClick={() => setSelectedIssueId('issue-3')}
+              onClick={() => weightIssue && setSelectedIssueId(weightIssue.id)}
               className={`p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                selectedIssueId === 'issue-3'
+                weightIssue && selectedIssueId === weightIssue.id
                   ? 'border-ups-gold bg-amber-100/60 ring-2 ring-ups-gold shadow-sm'
                   : 'border-amber-300 bg-amber-50/50 hover:bg-amber-100/40'
               }`}
             >
               <span className="text-[10px] font-bold text-gray-500 uppercase block">Gross weight</span>
-              <span className="text-base font-extrabold text-gray-900">118 kg</span>
-              <span className="text-[10px] text-amber-800 block mt-0.5">Entered: 96 kg</span>
+              <span className="text-base font-extrabold text-gray-900">
+                {weightIssue ? weightIssue.invoiceValue : `${shipmentDetails.totalWeight} kg`}
+              </span>
+              <span className="text-[10px] text-amber-800 block mt-0.5">
+                {weightIssue ? `Entered: ${weightIssue.enteredValue}` : 'Match'}
+              </span>
             </div>
 
             {/* HS code box */}
             <div
-              onClick={() => setSelectedIssueId('issue-2')}
+              onClick={() => hsCodeIssue && setSelectedIssueId(hsCodeIssue.id)}
               className={`p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                selectedIssueId === 'issue-2'
+                hsCodeIssue && selectedIssueId === hsCodeIssue.id
                   ? 'border-red-500 bg-red-100/60 ring-2 ring-red-400 shadow-sm'
-                  : 'border-dashed border-red-400 bg-red-50/40 hover:bg-red-100/30'
+                  : hsCodeIssue
+                  ? 'border-dashed border-red-400 bg-red-50/40 hover:bg-red-100/30'
+                  : 'border-emerald-300 bg-emerald-50/50'
               }`}
             >
-              <span className="text-[10px] font-bold text-red-600 uppercase block">HS code</span>
-              <span className="text-base font-extrabold text-red-600">Missing</span>
-              <span className="text-[10px] text-red-700 block mt-0.5">Required field</span>
+              <span className="text-[10px] font-bold text-gray-600 uppercase block">HS code</span>
+              <span className={`text-base font-extrabold ${hsCodeIssue ? 'text-red-600' : 'text-emerald-700'}`}>
+                {hsCodeIssue ? hsCodeIssue.invoiceValue : '8482.10'}
+              </span>
+              <span className="text-[10px] text-gray-500 block mt-0.5">
+                {hsCodeIssue ? 'Classification needed' : 'Verified'}
+              </span>
             </div>
 
-            {/* Invoice total - USD box */}
+            {/* Invoice total box */}
             <div
-              onClick={() => setSelectedIssueId('issue-1')}
+              onClick={() => decValIssue && setSelectedIssueId(decValIssue.id)}
               className={`p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                selectedIssueId === 'issue-1'
+                decValIssue && selectedIssueId === decValIssue.id
                   ? 'border-ups-gold bg-amber-100/80 ring-2 ring-ups-gold shadow-md'
                   : 'border-amber-400 bg-amber-50/70 hover:bg-amber-100/50'
               }`}
             >
-              <span className="text-[10px] font-bold text-gray-700 uppercase block">Invoice Total (USD)</span>
-              <span className="text-base font-extrabold text-gray-950">$4,800</span>
-              <span className="text-[10px] text-amber-900 font-semibold block mt-0.5">Entered: $3,900</span>
+              <span className="text-[10px] font-bold text-gray-700 uppercase block">
+                Invoice Total ({shipmentDetails.currency || 'USD'})
+              </span>
+              <span className="text-base font-extrabold text-gray-950">
+                {decValIssue ? decValIssue.invoiceValue : `$${Number(shipmentDetails.declaredValue).toLocaleString()}`}
+              </span>
+              <span className="text-[10px] text-amber-900 font-semibold block mt-0.5">
+                {decValIssue ? `Entered: ${decValIssue.enteredValue}` : 'Match'}
+              </span>
             </div>
           </div>
         </div>

@@ -30,7 +30,12 @@ export const Step4ReportSubmit: React.FC = () => {
     setStep,
     submitForCustomsClearance,
     isSubmitting,
-    isSubmitted
+    isSubmitted,
+    readinessScore,
+    criticalCount,
+    warningsCount,
+    checksPassedCount,
+    issues
   } = useShipment();
 
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
@@ -44,7 +49,7 @@ export const Step4ReportSubmit: React.FC = () => {
 
   const handlePreFillSuggestedReason = () => {
     setExceptionReason(
-      'Net weight of items is 96 kg; invoice shows 118 kg gross weight including wooden pallet and crating packaging.'
+      `Net merchandise weight is ${shipmentDetails.totalWeight} kg; variance accounted for by pallet and protective packaging.`
     );
   };
 
@@ -212,15 +217,13 @@ export const Step4ReportSubmit: React.FC = () => {
                 Readiness after fixes
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                4 fields updated · 1 exception needs a note
+                {auditRecords.length} fields audited · {criticalCount > 0 ? `${criticalCount} critical unresolved` : 'All criticals resolved'}
               </p>
             </div>
 
-            {/* Score Delta Display: 62 -> 94 / 100 */}
+            {/* Score Delta Display */}
             <div className="flex items-baseline gap-2 bg-amber-50/80 px-4 py-3 rounded-2xl border border-amber-200/80 self-start sm:self-auto">
-              <span className="text-2xl font-bold text-gray-400 line-through">62</span>
-              <span className="text-xl font-bold text-emerald-600">→</span>
-              <span className="text-3xl font-extrabold text-emerald-700">94</span>
+              <span className="text-3xl font-extrabold text-emerald-700">{readinessScore}</span>
               <span className="text-xs font-semibold text-gray-400">/ 100</span>
             </div>
           </div>
@@ -231,10 +234,10 @@ export const Step4ReportSubmit: React.FC = () => {
             <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-card">
               <span className="text-xs font-semibold text-gray-500 block">Critical issues</span>
               <span className="text-base font-extrabold text-emerald-700 block mt-1">
-                2 corrected
+                {issues.filter(i => i.severity === 'critical' && i.status === 'corrected').length} corrected
               </span>
               <span className="text-[11px] text-gray-400 block mt-0.5">
-                No critical issues remaining
+                {criticalCount > 0 ? `${criticalCount} remaining` : 'No critical issues remaining'}
               </span>
             </div>
 
@@ -242,10 +245,10 @@ export const Step4ReportSubmit: React.FC = () => {
             <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-card">
               <span className="text-xs font-semibold text-gray-500 block">Warnings</span>
               <span className="text-base font-extrabold text-amber-700 block mt-1">
-                2 corrected · 1 ignored
+                {issues.filter(i => i.severity === 'warning' && i.status === 'corrected').length} corrected · {issues.filter(i => i.status === 'ignored').length} ignored
               </span>
               <span className="text-[11px] text-amber-600/90 block mt-0.5">
-                {isNoteSaved ? 'Note attached' : 'Ignored weight needs a note'}
+                {isNoteSaved ? 'Note attached' : (warningsCount > 0 ? 'Review or attach note' : 'Clear')}
               </span>
             </div>
 
@@ -253,10 +256,10 @@ export const Step4ReportSubmit: React.FC = () => {
             <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-card">
               <span className="text-xs font-semibold text-gray-500 block">Checks passed</span>
               <span className="text-base font-extrabold text-emerald-700 block mt-1">
-                14 passed
+                {checksPassedCount} passed
               </span>
               <span className="text-[11px] text-gray-400 block mt-0.5">
-                Unchanged from validation
+                Verified against tariff schedules
               </span>
             </div>
           </div>

@@ -32,6 +32,13 @@ export const Step1UploadDetails: React.FC = () => {
     }
   };
 
+  const handleLoadSampleCsv = () => {
+    const sampleCsvContent = `InvoiceNumber,InvoiceDate,SellerName,SellerAddress,BuyerName,BuyerAddress,ItemDescription,HsCode,Quantity,UnitPrice,TotalAmount,Currency,GrossWeightKg,NetWeightKg,OriginCountry,DestinationCountry
+INV-2026-8841,2026-04-12,Apex Industrial Supplies Ltd.,74 Industrial Zone New Delhi 110020 India,TransGlobal Logistics Inc.,500 Gateway Blvd Dallas TX 75261 USA,Industrial Carbon Steel Ball Bearings,8482.10,500,12.50,6250.00,USD,145.00,132.50,India,USA`;
+    const sampleFile = new File([sampleCsvContent], 'commercial_invoice_sample.csv', { type: 'text/csv' });
+    addDocument(sampleFile);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -98,7 +105,7 @@ export const Step1UploadDetails: React.FC = () => {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept="*/*"
                 onChange={handleFileChange}
               />
 
@@ -107,24 +114,38 @@ export const Step1UploadDetails: React.FC = () => {
               </div>
 
               <p className="text-xs font-semibold text-gray-800">
-                Drag & drop PDF, JPG, or PNG here
+                Drag & drop any invoice (PDF, JPG, PNG, Screenshots, Handwritten, CSV, TXT)
               </p>
               <p className="text-[11px] text-gray-400 my-1 font-medium">or</p>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-ups-gold hover:bg-ups-gold-hover text-ups-brown font-bold text-xs shadow-xs transition-transform active:scale-95"
-              >
-                <FolderOpen className="w-3.5 h-3.5" />
-                <span>Browse Files</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-ups-gold hover:bg-ups-gold-hover text-ups-brown font-bold text-xs shadow-xs transition-transform active:scale-95"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Browse Files</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLoadSampleCsv();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold text-xs transition-transform active:scale-95 border border-amber-300/80"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-amber-800" />
+                  <span>Load Sample CSV</span>
+                </button>
+              </div>
 
               <p className="text-[11px] text-gray-400 mt-2.5">
-                Supported formats: PDF, JPG, PNG
+                Supported formats: All documents, images, spreadsheets & text files
               </p>
             </div>
 
@@ -144,47 +165,57 @@ export const Step1UploadDetails: React.FC = () => {
 
                 {/* Table Rows */}
                 <div className="divide-y divide-gray-100">
-                  {documents.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-amber-50/30 transition-colors"
-                    >
-                      {/* Name & Icon */}
-                      <div className="col-span-6 flex items-center gap-2 font-medium text-gray-800 truncate pr-2">
-                        {doc.fileType === 'pdf' ? (
-                          <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-3.5 h-3.5" />
-                          </div>
-                        ) : (
-                          <div className="w-5 h-5 rounded bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <ImageIcon className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                        <span className="truncate" title={doc.fileName}>
-                          {doc.fileName}
-                        </span>
-                      </div>
-
-                      {/* Status */}
-                      <div className="col-span-4">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Extracted
-                        </span>
-                      </div>
-
-                      {/* Action */}
-                      <div className="col-span-2 text-right">
-                        <button
-                          onClick={() => removeDocument(doc.id)}
-                          className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors"
-                          title="Remove file"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                  {documents.length === 0 ? (
+                    <div className="p-4 text-center text-gray-400 text-xs">
+                      No documents uploaded yet. Upload a CSV, PDF, or image above to auto-extract details.
                     </div>
-                  ))}
+                  ) : (
+                    documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-amber-50/30 transition-colors"
+                      >
+                        {/* Name & Icon */}
+                        <div className="col-span-6 flex items-center gap-2 font-medium text-gray-800 truncate pr-2">
+                          {doc.fileType === 'pdf' ? (
+                            <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-3.5 h-3.5" />
+                            </div>
+                          ) : doc.fileType === 'csv' ? (
+                            <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                              <FileSpreadsheet className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          <span className="truncate" title={doc.fileName}>
+                            {doc.fileName}
+                          </span>
+                        </div>
+
+                        {/* Status */}
+                        <div className="col-span-4">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Extracted
+                          </span>
+                        </div>
+
+                        {/* Action */}
+                        <div className="col-span-2 text-right">
+                          <button
+                            onClick={() => removeDocument(doc.id)}
+                            className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors"
+                            title="Remove file"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -200,7 +231,9 @@ export const Step1UploadDetails: React.FC = () => {
                 Extracted Data Preview
               </h4>
               <p className="text-gray-700 mt-0.5 font-medium leading-relaxed">
-                Invoice INV-0412 · Seller: ABC Exports · Buyer: Global Traders · Total: $4,800 USD
+                {documents.length > 0 && shipmentDetails.productDescription
+                  ? `Product: ${shipmentDetails.productDescription} · Qty: ${shipmentDetails.quantity} · Total: $${shipmentDetails.declaredValue} ${shipmentDetails.currency} · Weight: ${shipmentDetails.totalWeight} kg`
+                  : 'No document extracted yet. Upload your invoice or click "Load Sample CSV" to view live parsed customs fields.'}
               </p>
             </div>
           </div>
@@ -344,6 +377,7 @@ export const Step1UploadDetails: React.FC = () => {
                   onChange={(e) => updateShipmentDetails({ originCountry: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white"
                 >
+                  <option value="">Select Origin Country</option>
                   <option value="India">India</option>
                   <option value="China">China</option>
                   <option value="Vietnam">Vietnam</option>
@@ -361,6 +395,7 @@ export const Step1UploadDetails: React.FC = () => {
                   onChange={(e) => updateShipmentDetails({ destinationCountry: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white"
                 >
+                  <option value="">Select Destination Country</option>
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
                   <option value="United Kingdom">United Kingdom</option>

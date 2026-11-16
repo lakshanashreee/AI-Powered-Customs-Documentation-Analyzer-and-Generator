@@ -91,6 +91,53 @@ AI-Powered-Customs-Documentation-Analyzer-and-Generator/
 
 ---
 
+## 💻 .NET 10 Backend & AI Architecture
+
+The backend is built with **.NET 10** (`CrossBorderReady.Api`), utilizing C# 13/14 language features, clean architecture, dependency injection, and minimal API endpoints.
+
+```
+backend/CrossBorderReady.Api/
+├── Program.cs                                  # Startup, DI container, CORS, and Minimal API routes
+├── CrossBorderReady.Api.csproj                 # .NET 10 SDK & Swashbuckle OpenAPI
+├── appsettings.json                            # AI service endpoints configuration
+├── Models/
+│   ├── ShipmentModels.cs                       # Shipment, ValidationIssue, BoundingBox, AuditRecord DTOs
+│   ├── ReportModels.cs                         # ReportItem, QueryFilter, ReportStats DTOs
+│   ├── AccountModels.cs                        # PersonalInfo, CompanyShipper, ValidationPreferences DTOs
+│   └── ChatModels.cs                           # AI Chat request/response DTOs
+└── Services/
+    ├── IOcrExtractionService.cs                # OCR abstraction contract
+    ├── PaddleOcrExtractionService.cs           # PaddleOCR integration & C# tokenization engine
+    ├── ICustomsRuleEngine.cs                   # Customs rules contract
+    ├── CustomsComplianceEngine.cs              # Multi-factor tariff validation & readiness scoring
+    ├── IQwenReasoningService.cs                # Qwen reasoning abstraction contract
+    ├── QwenComplianceService.cs                # Qwen prompt orchestration & LLM reasoning engine
+    ├── IShipmentService.cs                     # Shipment lifecycle & workbench state contract
+    ├── ShipmentService.cs                      # Thread-safe shipment repository & workbench logic
+    ├── IReportService.cs                       # Customs reports management contract
+    ├── ReportService.cs                        # Reports filtering, searching, and CSV generation
+    ├── IAccountService.cs                      # Account profile & preferences contract
+    ├── AccountService.cs                       # Shipper profile and AI settings service
+    ├── IAiChatService.cs                       # AI Assistant chatbot contract
+    └── AiChatService.cs                        # Qwen-powered customs compliance assistant
+```
+
+### 🎯 Where & For What the .NET Stack is Used
+
+| Feature / Module | .NET Implementation Component | Responsibility & C# Features |
+| :--- | :--- | :--- |
+| **OCR Document Pipeline** | `PaddleOcrExtractionService.cs` | Receives multipart form uploads (`IFormFile`), performs image/PDF tokenization, computes document bounding-box coordinates for the interactive visualizer, and interfaces with external PaddleOCR endpoints using `HttpClient`. |
+| **Customs Rule Engine** | `CustomsComplianceEngine.cs` | Implements customs validation logic: compares declared value against invoice total, validates HS codes against tariff schedules, flags weight tolerance deviations, checks commodity description specificity, and calculates dynamic 0–100 Readiness Scores. |
+| **Qwen AI Reasoning** | `QwenComplianceService.cs` | Orchestrates LLM discrepancy analysis, generates plain-English *Why it matters* and *Correction Guidance* explanations, and suggests automated fixes. |
+| **Shipment State & Workbench** | `ShipmentService.cs` | Thread-safe in-memory shipment store (`ConcurrentDictionary`), handling fix applications (`ApplyFix`), manual edits (`EditManually`), issue ignores (`IgnoreIssue`), and audit trail generation. |
+| **Clearance Submission** | `ShipmentService.cs` (`SubmitForClearanceAsync`) | Generates certified electronic customs submission references (e.g. `UPS-CB-2026-0412-X99`), locks validated shipments, and timestamps audit trails. |
+| **Generated Reports Engine** | `ReportService.cs` | Powers the Reports section with multi-parameter LINQ filtering (search, date range, status, destination), pagination, and CSV file stream generation. |
+| **Customs AI Chatbot** | `AiChatService.cs` | Natural language customs assistant answering compliance queries, filing rules, and document formatting questions. |
+| **Account & Shipper Settings** | `AccountService.cs` | Manages verified shipper credentials, EORI/EIN tax identifiers, Incoterms defaults, and AI strictness modes. |
+| **RESTful API Surface** | `Program.cs` (Minimal APIs) | Exposes clean, OpenAPI-documented endpoints with CORS policies, dependency injection, and typed record model binding. |
+
+---
+
 ## 🤖 AI & Backend Integration Guide
 
 ### PaddleOCR Integration (`POST /api/ocr/extract`)

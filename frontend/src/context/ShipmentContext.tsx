@@ -3,7 +3,8 @@ import {
   ShipmentDetails,
   UploadedDocument,
   ValidationIssue,
-  AuditRecord
+  AuditRecord,
+  ReportItem
 } from '../types';
 import {
   INITIAL_SHIPMENT_DETAILS,
@@ -18,6 +19,10 @@ interface ShipmentContextType {
   setStep: (step: number) => void;
   activeNavTab: 'shipments' | 'reports' | 'help' | 'account';
   setActiveNavTab: (tab: 'shipments' | 'reports' | 'help' | 'account') => void;
+
+  authUser: any | null;
+  loginUser: (user: any) => void;
+  logoutUser: () => void;
 
   shipmentDetails: ShipmentDetails;
   updateShipmentDetails: (data: Partial<ShipmentDetails>) => void;
@@ -48,6 +53,9 @@ interface ShipmentContextType {
   warningsCount: number;
   checksPassedCount: number;
 
+  reports: ReportItem[];
+  addReport: (report: ReportItem) => void;
+
   isValidating: boolean;
   triggerRevalidation: () => Promise<void>;
 
@@ -61,6 +69,26 @@ interface ShipmentContextType {
 const ShipmentContext = createContext<ShipmentContextType | undefined>(undefined);
 
 export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [authUser, setAuthUser] = useState<any>(() => {
+    try {
+      const stored = localStorage.getItem('crossborder_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const loginUser = (user: any) => {
+    setAuthUser(user);
+    localStorage.setItem('crossborder_user', JSON.stringify(user));
+  };
+
+  const logoutUser = () => {
+    setAuthUser(null);
+    localStorage.removeItem('crossborder_user');
+    localStorage.removeItem('crossborder_token');
+  };
+
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [activeNavTab, setActiveNavTab] = useState<'shipments' | 'reports' | 'help' | 'account'>('shipments');
 
@@ -74,12 +102,25 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isNoteSaved, setIsNoteSaved] = useState<boolean>(false);
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>(INITIAL_AUDIT_RECORDS);
 
+  // Stored Reports: Starts completely empty (0 reports)
+  const [reports, setReports] = useState<ReportItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('crossborder_reports');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Last extracted document fields for comparison
+  const [lastExtractedFields, setLastExtractedFields] = useState<any>(null);
+
   const [isValidating, setIsValidating] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submissionRef, setSubmissionRef] = useState<string | null>(null);
 
-  // Compute issue counts
+  // Compute live issue counts
   const criticalCount = useMemo(() => {
     return issues.filter((i) => i.severity === 'critical' && i.status === 'open').length;
   }, [issues]);
@@ -90,16 +131,14 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const checksPassedCount = 14;
 
-  // Dynamic Readiness Score:
-  // Starts at 62. Each resolved critical adds +14. Each resolved warning adds +6. Max 94 (or 100).
+  // Dynamic Readiness Score (starts high, reduced by active criticals/warnings)
   const readinessScore = useMemo(() => {
-    let score = 62;
-    const decVal = issues.find((i) => i.id === 'issue-1');
-    if (decVal && decVal.status === 'corrected') score += 16;
-    const hsCode = issues.find((i) => i.id === 'issue-2');
-    if (hsCode && (hsCode.status === 'corrected' || hsCode.status === 'added')) score += 16;
-    return Math.min(score, 94);
-  }, [issues]);
+    if (issues.length === 0) return 98;
+    let score = 100 - (criticalCount * 18) - (warningsCount * 6);
+    if (score < 10) score = 10;
+    if (score > 100) score = 100;
+    return score;
+  }, [issues, criticalCount, warningsCount]);
 
   const selectedIssue = useMemo(() => {
     return issues.find((i) => i.id === selectedIssueId) || issues[0];
@@ -109,23 +148,35 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setShipmentDetails((prev) => ({ ...prev, ...data }));
   };
 
-  const addDocument = (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const fileType = ext === 'pdf' ? 'pdf' : ext === 'png' ? 'png' : 'jpg';
+  const addReport = (newReport: ReportItem) => {
+    setReports((prev) => {
+      const updated = [newReport, ...prev];
+      localStorage.setItem('crossborder_reports', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Add Document & Run Dynamic Extraction
+  const addDocument = async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const fileType = ext === 'pdf' ? 'pdf' : ext === 'csv' ? 'csv' : (ext === 'png' ? 'png' : 'jpg');
+    
     const newDoc: UploadedDocument = {
       id: `doc-${Date.now()}`,
       fileName: file.name,
-      fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      fileType: fileType as 'pdf' | 'jpg' | 'png',
+      fileSize: file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      fileType: fileType as any,
       status: 'processing',
-      progress: 40,
+      progress: 50,
       uploadedAt: 'Just now'
     };
 
     setDocuments((prev) => [newDoc, ...prev]);
 
-    // Simulate completion
-    setTimeout(() => {
+    try {
+      const ocrRes = await ApiService.extractDocumentWithPaddleOcr(file, shipmentDetails.shipmentNumber);
+      setLastExtractedFields(ocrRes.extractedFields);
+
       setDocuments((prev) =>
         prev.map((d) =>
           d.id === newDoc.id
@@ -134,32 +185,106 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 status: 'extracted',
                 progress: 100,
                 extractedSummary: {
-                  invoiceNumber: 'INV-0412',
-                  seller: 'ABC Exports',
-                  buyer: 'Global Traders',
-                  totalAmount: '$4,800',
-                  currency: 'USD'
+                  invoiceNumber: ocrRes.extractedFields.invoiceNo,
+                  seller: ocrRes.extractedFields.sellerName,
+                  buyer: ocrRes.extractedFields.buyerName,
+                  totalAmount: `$${ocrRes.extractedFields.totalAmount.toLocaleString()}`,
+                  currency: ocrRes.extractedFields.currency
                 }
               }
             : d
         )
       );
-    }, 1500);
+
+      // Auto-fill shipment details directly from the extracted invoice
+      const item = ocrRes.extractedFields.items[0];
+      const rawNum = ocrRes.extractedFields.invoiceNo.replace(/\D/g, '');
+      const shipNum = rawNum ? rawNum.slice(-4) : '8841';
+
+      setShipmentDetails({
+        shipmentNumber: shipNum,
+        productDescription: item?.description || 'Industrial Machinery Cargo',
+        quantity: item?.quantity || 100,
+        totalWeight: ocrRes.extractedFields.grossWeightKg || 45,
+        length: 40,
+        width: 30,
+        height: 25,
+        declaredValue: ocrRes.extractedFields.totalAmount || 1500,
+        currency: ocrRes.extractedFields.currency || 'USD',
+        originCountry: 'India',
+        destinationCountry: 'USA',
+        invoiceNumber: ocrRes.extractedFields.invoiceNo,
+        seller: ocrRes.extractedFields.sellerName,
+        buyer: ocrRes.extractedFields.buyerName
+      });
+    } catch {
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === newDoc.id ? { ...d, status: 'error' } : d))
+      );
+    }
   };
 
   const removeDocument = (id: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
+  // Re-generate issues dynamically
+  const triggerRevalidation = async () => {
+    setIsValidating(true);
+    try {
+      const qwenRes = await ApiService.runQwenComplianceAnalysis(shipmentDetails, lastExtractedFields);
+      setIssues(qwenRes.issues);
+      if (qwenRes.issues.length > 0) {
+        setSelectedIssueId(qwenRes.issues[0].id);
+      }
+
+      // Sync audit records from issues
+      const records: AuditRecord[] = qwenRes.issues.map((i) => ({
+        field: i.displayName,
+        original: i.enteredValue,
+        corrected: i.status === 'corrected' ? i.invoiceValue : (i.status === 'ignored' ? `${i.enteredValue} retained` : 'Pending review'),
+        status: i.status === 'corrected' ? 'Corrected' : (i.status === 'ignored' ? 'Needs note' : 'Needs note'),
+        statusType: i.status === 'corrected' ? 'success' : 'warning',
+        note: i.field.includes('weight') ? exceptionReason : undefined
+      }));
+      setAuditRecords(records);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  // Step change hook: auto-run dynamic validation when moving to Step 2
+  const setStep = (step: number) => {
+    setCurrentStep(step);
+    if (step === 2 || step === 3) {
+      triggerRevalidation();
+    }
+  };
+
   // Issue Action: Accept Fix
   const acceptFix = (issueId: string) => {
+    ApiService.applyFix(shipmentDetails.shipmentNumber, issueId);
+
     setIssues((prev) =>
       prev.map((iss) => {
         if (iss.id === issueId) {
+          const cleanValue = iss.invoiceValue.replace(/[^\d.]/g, '');
+
+          // Update underlying shipment details
+          if (iss.field === 'declared_value' && cleanValue) {
+            setShipmentDetails((s) => ({ ...s, declaredValue: parseFloat(cleanValue) }));
+          } else if (iss.field === 'gross_weight' && cleanValue) {
+            setShipmentDetails((s) => ({ ...s, totalWeight: parseFloat(cleanValue) }));
+          } else if (iss.field === 'quantity' && cleanValue) {
+            setShipmentDetails((s) => ({ ...s, quantity: parseInt(cleanValue, 10) }));
+          }
+
+          const resolvedValue = iss.invoiceValue !== 'Missing' ? iss.invoiceValue : '8482.10';
+
           return {
             ...iss,
             status: 'corrected',
-            enteredValue: iss.invoiceValue !== 'Missing' ? iss.invoiceValue : '4202.21',
+            enteredValue: resolvedValue,
             isBlocking: false
           };
         }
@@ -167,21 +292,39 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
     );
 
-    // If it's Declared Value, update shipment details declared value to 4800
-    if (issueId === 'issue-1') {
-      setShipmentDetails((prev) => ({ ...prev, declaredValue: 4800 }));
-    }
-    // If it's HS code
-    if (issueId === 'issue-2') {
-      // update HS code
-    }
+    // Update Audit Trail
+    setAuditRecords((prev) =>
+      prev.map((rec) => {
+        const matchingIssue = issues.find((i) => i.id === issueId);
+        if (matchingIssue && rec.field === matchingIssue.displayName) {
+          return {
+            ...rec,
+            corrected: matchingIssue.invoiceValue !== 'Missing' ? matchingIssue.invoiceValue : '8482.10',
+            status: 'Corrected',
+            statusType: 'success'
+          };
+        }
+        return rec;
+      })
+    );
   };
 
   // Issue Action: Edit Manually
   const editManually = (issueId: string, customValue: string) => {
+    ApiService.editManually(shipmentDetails.shipmentNumber, issueId, customValue);
+
     setIssues((prev) =>
       prev.map((iss) => {
         if (iss.id === issueId) {
+          const cleanNum = customValue.replace(/[^\d.]/g, '');
+          if (iss.field === 'declared_value' && cleanNum) {
+            setShipmentDetails((s) => ({ ...s, declaredValue: parseFloat(cleanNum) }));
+          } else if (iss.field === 'gross_weight' && cleanNum) {
+            setShipmentDetails((s) => ({ ...s, totalWeight: parseFloat(cleanNum) }));
+          } else if (iss.field === 'quantity' && cleanNum) {
+            setShipmentDetails((s) => ({ ...s, quantity: parseInt(cleanNum, 10) }));
+          }
+
           return {
             ...iss,
             status: 'updated',
@@ -193,19 +336,26 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
     );
 
-    if (issueId === 'issue-1') {
-      setShipmentDetails((prev) => ({ ...prev, declaredValue: customValue }));
-    }
-    if (issueId === 'issue-3') {
-      setShipmentDetails((prev) => ({ ...prev, totalWeight: customValue }));
-    }
-    if (issueId === 'issue-4') {
-      setShipmentDetails((prev) => ({ ...prev, quantity: customValue }));
-    }
+    setAuditRecords((prev) =>
+      prev.map((rec) => {
+        const matchingIssue = issues.find((i) => i.id === issueId);
+        if (matchingIssue && rec.field === matchingIssue.displayName) {
+          return {
+            ...rec,
+            corrected: customValue,
+            status: 'Updated',
+            statusType: 'success'
+          };
+        }
+        return rec;
+      })
+    );
   };
 
   // Issue Action: Ignore
   const ignoreIssue = (issueId: string) => {
+    ApiService.ignoreIssue(shipmentDetails.shipmentNumber, issueId);
+
     setIssues((prev) =>
       prev.map((iss) => {
         if (iss.id === issueId) {
@@ -218,14 +368,31 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return iss;
       })
     );
+
+    setAuditRecords((prev) =>
+      prev.map((rec) => {
+        const matchingIssue = issues.find((i) => i.id === issueId);
+        if (matchingIssue && rec.field === matchingIssue.displayName) {
+          return {
+            ...rec,
+            status: 'Needs note',
+            statusType: 'warning'
+          };
+        }
+        return rec;
+      })
+    );
   };
 
   const saveExceptionNote = () => {
     if (!exceptionReason.trim()) return;
     setIsNoteSaved(true);
+
+    ApiService.saveExceptionNote(shipmentDetails.shipmentNumber, exceptionReason);
+
     setAuditRecords((prev) =>
       prev.map((rec) => {
-        if (rec.field === 'Gross weight') {
+        if (rec.field.toLowerCase().includes('weight')) {
           return {
             ...rec,
             note: exceptionReason,
@@ -238,25 +405,47 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const triggerRevalidation = async () => {
-    setIsValidating(true);
-    await new Promise((resolve) => setTimeout(resolve, 1400));
-    setIsValidating(false);
-  };
-
   const submitForCustomsClearance = async () => {
     setIsSubmitting(true);
     try {
-      const res = await ApiService.submitCustomsClearance('0412', [
-        {
-          field: 'gross_weight',
-          reason: exceptionReason,
-          savedAt: new Date().toISOString(),
-          author: 'JD (Customs Compliance Officer)'
-        }
-      ], auditRecords);
+      const res = await ApiService.submitCustomsClearance(
+        shipmentDetails.shipmentNumber || '0412',
+        [
+          {
+            field: 'gross_weight',
+            reason: exceptionReason || 'Verified shipment documentation',
+            savedAt: new Date().toISOString(),
+            author: authUser?.fullName || 'Priya Sharma'
+          }
+        ],
+        auditRecords
+      );
+
       setSubmissionRef(res.submissionReference);
       setIsSubmitted(true);
+
+      // Create new dynamic report and persist
+      const newReport: ReportItem = {
+        id: `rpt-${Date.now()}`,
+        reportId: `RPT-${shipmentDetails.shipmentNumber || '0412'}`,
+        shipmentId: `#${shipmentDetails.shipmentNumber || '0412'}`,
+        invoiceName: documents[0]?.fileName || `${shipmentDetails.invoiceNumber || 'commercial_invoice'}.pdf`,
+        generatedDateTime: new Date().toISOString().replace('T', ' ').slice(0, 16),
+        route: `${shipmentDetails.originCountry || 'India'} → ${shipmentDetails.destinationCountry || 'USA'}`,
+        status: criticalCount > 0 ? 'Failed' : (warningsCount > 0 ? 'Needs Review' : 'Passed'),
+        issuesCount: criticalCount + warningsCount,
+        seller: shipmentDetails.seller || 'Apex Global Exports',
+        buyer: shipmentDetails.buyer || 'TransGlobal Logistics Inc.',
+        lineItems: shipmentDetails.productDescription || 'Commercial Merchandise Cargo',
+        readinessScore: readinessScore,
+        criticalIssues: criticalCount,
+        warnings: warningsCount,
+        passedChecks: checksPassedCount,
+        detectedIssues: issues.map((i) => `${i.displayName}: entered ${i.enteredValue} vs invoice ${i.invoiceValue}`),
+        suggestedCorrections: ['Ready for customs brokerage electronic entry (ACE/CDS).']
+      };
+
+      addReport(newReport);
     } finally {
       setIsSubmitting(false);
     }
@@ -266,7 +455,7 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCurrentStep(1);
     setShipmentDetails(INITIAL_SHIPMENT_DETAILS);
     setDocuments(INITIAL_DOCUMENTS);
-    setIssues(INITIAL_ISSUES);
+    setIssues([]);
     setSelectedIssueId('issue-1');
     setExceptionReason('');
     setIsNoteSaved(false);
@@ -278,9 +467,13 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <ShipmentContext.Provider
       value={{
         currentStep,
-        setStep: setCurrentStep,
+        setStep,
         activeNavTab,
         setActiveNavTab,
+
+        authUser,
+        loginUser,
+        logoutUser,
 
         shipmentDetails,
         updateShipmentDetails,
@@ -310,6 +503,9 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         criticalCount,
         warningsCount,
         checksPassedCount,
+
+        reports,
+        addReport,
 
         isValidating,
         triggerRevalidation,

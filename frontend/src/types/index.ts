@@ -36,7 +36,7 @@ export interface UploadedDocument {
   id: string;
   fileName: string;
   fileSize: string;
-  fileType: 'pdf' | 'jpg' | 'png';
+  fileType: 'pdf' | 'jpg' | 'png' | 'csv';
   status: 'extracted' | 'processing' | 'queued' | 'error';
   progress?: number;
   uploadedAt: string;
@@ -116,6 +116,7 @@ export interface PaddleOcrResult {
     totalAmount: number;
     currency: string;
     grossWeightKg?: number;
+    hsCode?: string;
   };
   rawConfidence: number;
   processingTimeMs: number;
@@ -137,5 +138,25 @@ export interface QwenAnalysisResponse {
     confidence: number;
     description: string;
   };
+}
+
+export interface ReportItem {
+  id: string;
+  reportId: string;
+  shipmentId: string;
+  invoiceName: string;
+  generatedDateTime: string;
+  route: string;
+  status: 'Passed' | 'Needs Review' | 'Failed';
+  issuesCount: number;
+  seller: string;
+  buyer: string;
+  lineItems: string;
+  readinessScore: number;
+  criticalIssues: number;
+  warnings: number;
+  passedChecks: number;
+  detectedIssues: string[];
+  suggestedCorrections: string[];
 }
 

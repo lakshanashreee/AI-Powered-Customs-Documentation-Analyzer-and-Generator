@@ -12,9 +12,9 @@ public record ShipmentDetailsDto(
     string Currency,
     string OriginCountry,
     string DestinationCountry,
-    string InvoiceNumber,
-    string Seller,
-    string Buyer
+    string? InvoiceNumber,
+    string? Seller,
+    string? Buyer
 );
 
 public record ValidationIssueDto(
@@ -31,14 +31,88 @@ public record ValidationIssueDto(
     string SuggestedCorrection,
     string SourceReference,
     string Status, // "open" | "corrected" | "added" | "updated" | "ignored"
-    bool IsBlocking
+    bool IsBlocking,
+    string? BoxId = null
 );
 
-public record ExceptionNoteDto(
-    string Field,
+public record BoundingBoxDto(
+    string BoxId,
+    string FieldName,
+    string Label,
+    string TextValue,
+    string EnteredValue,
+    double X,
+    double Y,
+    double Width,
+    double Height,
+    string Severity
+);
+
+public record ExtractedInvoiceDataDto(
+    string InvoiceNumber,
+    string InvoiceDate,
+    string SellerName,
+    string SellerAddress,
+    string BuyerName,
+    string BuyerAddress,
+    string Currency,
+    decimal Subtotal,
+    decimal TotalAmount,
+    decimal GrossWeightKg,
+    int TotalQuantity,
+    string LineItemDescription,
+    string? HsCode,
+    List<BoundingBoxDto> BoundingBoxes
+);
+
+public record PaddleOcrExtractionResponse(
+    string DocumentId,
+    string FileName,
+    long FileSizeBytes,
+    string FileType,
+    string UploadedAt,
+    ExtractedInvoiceDataDto ExtractedFields,
+    double Confidence,
+    long ProcessingTimeMs,
+    string Engine = "PaddleOCR v4"
+);
+
+public record QwenAnalysisResponse(
+    string ShipmentId,
+    int ReadinessScore,
+    int CriticalCount,
+    int WarningsCount,
+    int ChecksPassedCount,
+    List<ValidationIssueDto> Issues,
+    List<string> AiNotes,
+    RecommendedHsCodeDto? RecommendedHsCode,
+    DateTime AnalyzedAt
+);
+
+public record RecommendedHsCodeDto(
+    string Code,
+    double Confidence,
+    string Description,
+    string Chapter
+);
+
+public record ApplyFixRequest(
+    string IssueId
+);
+
+public record ManualEditRequest(
+    string IssueId,
+    string NewValue
+);
+
+public record IgnoreIssueRequest(
+    string IssueId,
+    string? Note
+);
+
+public record ExceptionNoteRequest(
     string Reason,
-    string SavedAt,
-    string Author
+    string? Field = "gross_weight"
 );
 
 public record AuditRecordDto(
@@ -47,25 +121,15 @@ public record AuditRecordDto(
     string Corrected,
     string Status,
     string StatusType,
-    string? Note
+    string? Note = null
 );
 
-public record PaddleOcrExtractionResponse(
-    string FileName,
-    string InvoiceNo,
-    string InvoiceDate,
-    string SellerName,
-    string BuyerName,
-    decimal TotalAmount,
-    string Currency,
-    decimal GrossWeightKg,
-    double Confidence
-);
-
-public record QwenAnalysisResponse(
+public record CustomsSubmissionResponse(
+    bool Success,
+    string SubmissionReference,
     string ShipmentId,
-    int ReadinessScore,
-    List<ValidationIssueDto> Issues,
-    List<string> AiNotes
+    DateTime SubmittedAt,
+    string Status,
+    string ManifestUrl,
+    int FinalReadinessScore
 );
-

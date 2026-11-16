@@ -8,10 +8,16 @@ import { Step4ReportSubmit } from './components/step4_report_submit/Step4ReportS
 import { GeneratedReportsView } from './components/reports/GeneratedReportsView';
 import { HelpSupportView } from './components/help/HelpSupportView';
 import { AccountProfileView } from './components/account/AccountProfileView';
+import { LoginPage } from './components/auth/LoginPage';
 import { useShipment } from './context/ShipmentContext';
 
 export const AppContent: React.FC = () => {
-  const { currentStep, activeNavTab } = useShipment();
+  const { currentStep, activeNavTab, authUser, loginUser } = useShipment();
+
+  // If user is not authenticated, render the Login Page
+  if (!authUser) {
+    return <LoginPage onLoginSuccess={loginUser} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-ups-bg-page text-gray-900 font-sans selection:bg-ups-gold selection:text-black">
@@ -20,13 +26,13 @@ export const AppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
-        {/* Render Generated Reports View (Images 1, 2, 3) */}
+        {/* Render Generated Reports View */}
         {activeNavTab === 'reports' && <GeneratedReportsView />}
 
-        {/* Render Help & Support View with AI Assistant Chatbot (Image 4) */}
+        {/* Render Help & Support View with AI Assistant Chatbot */}
         {activeNavTab === 'help' && <HelpSupportView />}
 
-        {/* Render Account Profile & Validation Preferences (Images 5, 6) */}
+        {/* Render Account Profile & Validation Preferences */}
         {activeNavTab === 'account' && <AccountProfileView />}
 
         {/* Render Shipments Workflow (Steps 1 to 4) */}
@@ -59,7 +65,7 @@ export const AppContent: React.FC = () => {
             <span>AI Customs Documentation Analyzer & Generator</span>
           </div>
           <div className="text-[11px] text-gray-400">
-            Powered by PaddleOCR Document Extraction & Qwen LLM Compliance Reasoning
+            Authenticated as: <span className="font-semibold text-gray-700">{authUser.fullName}</span> ({authUser.role})
           </div>
         </div>
       </footer>
