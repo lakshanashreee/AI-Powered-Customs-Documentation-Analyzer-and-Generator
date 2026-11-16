@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, BarChart3, HelpCircle, ChevronDown, User, LogOut, Sliders, Building2 } from 'lucide-react';
+import { Package, BarChart3, HelpCircle, ChevronDown, User, LogOut } from 'lucide-react';
 import { useShipment } from '../../context/ShipmentContext';
 
 export const Header: React.FC = () => {
@@ -107,32 +107,10 @@ export const Header: React.FC = () => {
                       setActiveNavTab('account');
                       setShowAccountMenu(false);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-gray-700 font-medium"
+                    className="w-full text-left px-4 py-2.5 hover:bg-amber-50 flex items-center gap-2.5 text-gray-700 font-semibold"
                   >
                     <User className="w-4 h-4 text-gray-400" />
                     <span>Account Profile</span>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      setActiveNavTab('account');
-                      setShowAccountMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-gray-700 font-medium"
-                  >
-                    <Building2 className="w-4 h-4 text-gray-400" />
-                    <span>Company & Shipper Details</span>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      setActiveNavTab('account');
-                      setShowAccountMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-gray-700 font-medium"
-                  >
-                    <Sliders className="w-4 h-4 text-gray-400" />
-                    <span>AI Validation Preferences</span>
                   </button>
 
                   <div className="border-t border-gray-100 my-1"></div>

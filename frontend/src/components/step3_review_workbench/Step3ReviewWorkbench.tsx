@@ -35,7 +35,6 @@ export const Step3ReviewWorkbench: React.FC = () => {
     editManually,
     ignoreIssue,
     setStep,
-    setReviewSubView,
     triggerRevalidation,
     isValidating
   } = useShipment();
@@ -76,30 +75,20 @@ export const Step3ReviewWorkbench: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Breadcrumbs & Top Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
-        <div className="flex items-center space-x-1.5">
-          <span
-            onClick={() => setStep(1)}
-            className="hover:text-gray-900 cursor-pointer font-medium"
-          >
-            Shipments
-          </span>
-          <span>/</span>
-          <span className="font-semibold text-gray-800">
-            #{shipmentDetails.shipmentNumber}
-          </span>
-          <span>/</span>
-          <span className="text-gray-500">Review & fix</span>
-        </div>
-
-        {/* View Switcher back to Priority list */}
-        <button
-          onClick={() => setReviewSubView('summary')}
-          className="text-xs font-semibold text-gray-600 hover:text-ups-brown underline text-left sm:text-right"
+      {/* Breadcrumbs Navigation */}
+      <div className="flex items-center space-x-1.5 text-xs text-gray-500">
+        <span
+          onClick={() => setStep(1)}
+          className="hover:text-gray-900 cursor-pointer font-medium"
         >
-          ← Back to Top Issues Priority View
-        </button>
+          Shipments
+        </span>
+        <span>/</span>
+        <span className="font-semibold text-gray-800">
+          #{shipmentDetails.shipmentNumber}
+        </span>
+        <span>/</span>
+        <span className="text-gray-500">Review & fix</span>
       </div>
 
       {/* Page Title & Action Buttons */}
@@ -389,19 +378,19 @@ export const Step3ReviewWorkbench: React.FC = () => {
           </div>
         </div>
 
-        {/* Mock Commercial Invoice Visualizer */}
-        <div className="border-2 border-gray-200 rounded-2xl p-6 bg-[#FCFBF8] font-sans text-xs text-gray-800 space-y-4 shadow-inner relative">
+        {/* Clean Commercial Invoice Visualizer */}
+        <div className="border border-gray-200 rounded-2xl p-5 bg-[#FCFBF8] font-sans text-xs text-gray-800 space-y-4 shadow-inner relative">
           {/* Document Header */}
-          <div className="flex justify-between items-start border-b border-gray-300 pb-3">
+          <div className="flex justify-between items-start border-b border-gray-200 pb-3">
             <div>
               <span className="text-sm font-extrabold tracking-wider uppercase text-gray-900">
                 COMMERCIAL INVOICE
               </span>
-              <p className="text-[11px] text-gray-500">Original Document Copy · Customs Entry</p>
+              <p className="text-[11px] text-gray-500">Document Scan · Customs Manifest</p>
             </div>
             <div className="text-right">
-              <span className="font-mono text-gray-600">Invoice no. [INV-0412]</span>
-              <p className="text-[11px] text-gray-400">Date: 2026-04-12</p>
+              <span className="font-mono font-bold text-gray-700">Invoice: INV-0412</span>
+              <p className="text-[11px] text-gray-500">Date: April 12, 2026</p>
             </div>
           </div>
 
@@ -409,22 +398,22 @@ export const Step3ReviewWorkbench: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600 border-b border-gray-200 pb-3">
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Seller:</span>
-              <span className="font-semibold text-gray-800">[ABC Exports Ltd.]</span>
+              <span className="font-semibold text-gray-800">ABC Exports Ltd.</span>
               <p className="text-[10px] text-gray-500">12 Industrial Estate, New Delhi, India</p>
             </div>
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Buyer / Consignee:</span>
-              <span className="font-semibold text-gray-800">[Global Traders Inc.]</span>
+              <span className="font-semibold text-gray-800">Global Traders Inc.</span>
               <p className="text-[10px] text-gray-500">450 Logistics Blvd, Dallas, TX, USA</p>
             </div>
             <div>
               <span className="text-gray-400 block text-[10px] uppercase font-bold">Line Items:</span>
-              <span className="font-semibold text-gray-800">[1 item · Women Leather Bags]</span>
-              <p className="text-[10px] text-gray-500">Origin: India (IN) · Incoterms: CIF</p>
+              <span className="font-semibold text-gray-800">Women Leather Handbags</span>
+              <p className="text-[10px] text-gray-500">Origin: India · Incoterms: CIF</p>
             </div>
           </div>
 
-          {/* Interactive Bounding Boxes Layout (representing invoice fields) */}
+          {/* Interactive Bounding Boxes Layout */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
             {/* Quantity box */}
             <div
@@ -437,7 +426,7 @@ export const Step3ReviewWorkbench: React.FC = () => {
             >
               <span className="text-[10px] font-bold text-gray-500 uppercase block">Quantity</span>
               <span className="text-base font-extrabold text-gray-900">240</span>
-              <span className="text-[10px] text-amber-800 block mt-0.5">Discrepancy (204 ent.)</span>
+              <span className="text-[10px] text-amber-800 block mt-0.5">Entered: 204</span>
             </div>
 
             {/* Gross weight box */}
@@ -451,7 +440,7 @@ export const Step3ReviewWorkbench: React.FC = () => {
             >
               <span className="text-[10px] font-bold text-gray-500 uppercase block">Gross weight</span>
               <span className="text-base font-extrabold text-gray-900">118 kg</span>
-              <span className="text-[10px] text-amber-800 block mt-0.5">Mismatch (96 kg ent.)</span>
+              <span className="text-[10px] text-amber-800 block mt-0.5">Entered: 96 kg</span>
             </div>
 
             {/* HS code box */}
@@ -465,7 +454,7 @@ export const Step3ReviewWorkbench: React.FC = () => {
             >
               <span className="text-[10px] font-bold text-red-600 uppercase block">HS code</span>
               <span className="text-base font-extrabold text-red-600">Missing</span>
-              <span className="text-[10px] text-red-700 block mt-0.5">Critical required</span>
+              <span className="text-[10px] text-red-700 block mt-0.5">Required field</span>
             </div>
 
             {/* Invoice total - USD box */}
@@ -477,7 +466,7 @@ export const Step3ReviewWorkbench: React.FC = () => {
                   : 'border-amber-400 bg-amber-50/70 hover:bg-amber-100/50'
               }`}
             >
-              <span className="text-[10px] font-bold text-gray-700 uppercase block">Invoice total · USD</span>
+              <span className="text-[10px] font-bold text-gray-700 uppercase block">Invoice Total (USD)</span>
               <span className="text-base font-extrabold text-gray-950">$4,800</span>
               <span className="text-[10px] text-amber-900 font-semibold block mt-0.5">Entered: $3,900</span>
             </div>
@@ -489,11 +478,11 @@ export const Step3ReviewWorkbench: React.FC = () => {
       <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           type="button"
-          onClick={() => setStep(1)}
+          onClick={() => setStep(2)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to shipment details</span>
+          <span>Back to AI validation</span>
         </button>
 
         <button

@@ -3,7 +3,6 @@ import {
   User,
   Building2,
   Sliders,
-  Bell,
   Shield,
   Pencil,
   Info,
@@ -13,7 +12,7 @@ import {
 
 export const AccountProfileView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    'personal' | 'company' | 'validation' | 'notifications' | 'security'
+    'personal' | 'company' | 'validation' | 'security'
   >('personal');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -191,21 +190,6 @@ export const AccountProfileView: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('notifications')}
-              className={`w-full flex items-center justify-between px-4 py-3.5 font-semibold transition-colors border-t border-gray-100 ${
-                activeTab === 'notifications'
-                  ? 'bg-amber-50 text-ups-brown border-l-4 border-ups-gold'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Bell className="w-4 h-4 text-gray-500" />
-                <span>Notifications</span>
-              </div>
-              {activeTab === 'notifications' && <ChevronRight className="w-4 h-4 text-ups-brown" />}
-            </button>
-
-            <button
               onClick={() => setActiveTab('security')}
               className={`w-full flex items-center justify-between px-4 py-3.5 font-semibold transition-colors border-t border-gray-100 ${
                 activeTab === 'security'
@@ -361,7 +345,7 @@ export const AccountProfileView: React.FC = () => {
           )}
 
           {/* TAB 2: COMPANY & SHIPPER DETAILS (Image 5 bottom) */}
-          {(activeTab === 'company' || activeTab === 'personal') && (
+          {activeTab === 'company' && (
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-gray-200 shadow-card space-y-6">
               <div>
                 <h2 className="text-base font-bold text-gray-900">
@@ -802,51 +786,7 @@ export const AccountProfileView: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 4: NOTIFICATIONS */}
-          {activeTab === 'notifications' && (
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-gray-200 shadow-card space-y-6">
-              <div>
-                <h2 className="text-base font-bold text-gray-900">Notifications</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Configure alerts for customs discrepancies and document status updates.
-                </p>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-200">
-                  <div>
-                    <span className="font-bold text-gray-900 block">Critical Discrepancy Alerts</span>
-                    <span className="text-[11px] text-gray-500">
-                      Notify immediately via email when an invoice has blocking compliance issues.
-                    </span>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-4 h-4 accent-ups-gold" />
-                </div>
-
-                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-200">
-                  <div>
-                    <span className="font-bold text-gray-900 block">Weekly Customs Clearance Digest</span>
-                    <span className="text-[11px] text-gray-500">
-                      Receive weekly summaries of cleared shipments and error reduction rates.
-                    </span>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-4 h-4 accent-ups-gold" />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => showSaveSuccess('Notifications')}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-ups-gold hover:bg-ups-gold-hover text-ups-brown shadow-sm"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: SECURITY & AI API KEYS */}
+          {/* TAB 4: SECURITY & AI API KEYS */}
           {activeTab === 'security' && (
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-gray-200 shadow-card space-y-6">
               <div>

@@ -28,7 +28,6 @@ export const Step4ReportSubmit: React.FC = () => {
     isNoteSaved,
     saveExceptionNote,
     setStep,
-    setReviewSubView,
     submitForCustomsClearance,
     isSubmitting,
     isSubmitted
@@ -523,14 +522,11 @@ export const Step4ReportSubmit: React.FC = () => {
       <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           type="button"
-          onClick={() => {
-            setReviewSubView('workbench');
-            setStep(3);
-          }}
+          onClick={() => setStep(3)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to validation</span>
+          <span>Back to review & fix</span>
         </button>
 
         <div className="text-xs font-medium text-gray-500">

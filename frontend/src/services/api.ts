@@ -53,8 +53,7 @@ export const INITIAL_DOCUMENTS: UploadedDocument[] = [
     fileName: 'packing_list.jpg',
     fileSize: '840 KB',
     fileType: 'jpg',
-    status: 'processing',
-    progress: 60,
+    status: 'extracted',
     uploadedAt: 'Today, 10:15 AM'
   }
 ];
@@ -175,28 +174,28 @@ export const INITIAL_AUDIT_RECORDS: AuditRecord[] = [
   {
     field: 'HS code',
     original: 'Missing',
-    corrected: 'Added · 4202.21',
+    corrected: 'Added: 4202.21 (Leather Handbags)',
     status: 'Added',
     statusType: 'success'
   },
   {
     field: 'Quantity',
     original: '204',
-    corrected: '240',
+    corrected: '240 units',
     status: 'Corrected',
     statusType: 'success'
   },
   {
     field: 'Description',
     original: '"Clothes"',
-    corrected: '[Specific description added]',
+    corrected: 'Leather Handbags',
     status: 'Updated',
     statusType: 'success'
   },
   {
     field: 'Gross weight',
     original: '96 kg',
-    corrected: '96 kg retained\nInvoice: 118 kg · Mismatch ignored',
+    corrected: '96 kg retained (Invoice: 118 kg)',
     status: 'Needs note',
     statusType: 'warning',
     note: ''

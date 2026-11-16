@@ -148,10 +148,7 @@ export const GeneratedReportsView: React.FC = () => {
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('All dates');
-  const [fromTime, setFromTime] = useState('');
-  const [toTime, setToTime] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [originFilter, setOriginFilter] = useState('All');
   const [destinationFilter, setDestinationFilter] = useState('All');
   const [sortBy, setSortBy] = useState('Newest first');
 
@@ -164,12 +161,10 @@ export const GeneratedReportsView: React.FC = () => {
     let count = 0;
     if (searchQuery.trim()) count++;
     if (dateRange !== 'All dates') count++;
-    if (fromTime || toTime) count++;
     if (statusFilter !== 'All') count++;
-    if (originFilter !== 'All') count++;
     if (destinationFilter !== 'All') count++;
     return count;
-  }, [searchQuery, dateRange, fromTime, toTime, statusFilter, originFilter, destinationFilter]);
+  }, [searchQuery, dateRange, statusFilter, destinationFilter]);
 
   // Filtered reports
   const filteredReports = useMemo(() => {
@@ -180,7 +175,9 @@ export const GeneratedReportsView: React.FC = () => {
         const matchesQuery =
           report.reportId.toLowerCase().includes(query) ||
           report.shipmentId.toLowerCase().includes(query) ||
-          report.invoiceName.toLowerCase().includes(query);
+          report.invoiceName.toLowerCase().includes(query) ||
+          report.seller.toLowerCase().includes(query) ||
+          report.buyer.toLowerCase().includes(query);
         if (!matchesQuery) return false;
       }
 
@@ -189,11 +186,7 @@ export const GeneratedReportsView: React.FC = () => {
         return false;
       }
 
-      // Route Origin & Destination filter
-      if (originFilter !== 'All') {
-        const [origin] = report.route.split(' → ');
-        if (origin !== originFilter) return false;
-      }
+      // Route Destination filter
       if (destinationFilter !== 'All') {
         const [, dest] = report.route.split(' → ');
         if (dest !== destinationFilter) return false;
@@ -201,15 +194,12 @@ export const GeneratedReportsView: React.FC = () => {
 
       return true;
     });
-  }, [searchQuery, statusFilter, originFilter, destinationFilter]);
+  }, [searchQuery, statusFilter, destinationFilter]);
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setDateRange('All dates');
-    setFromTime('');
-    setToTime('');
     setStatusFilter('All');
-    setOriginFilter('All');
     setDestinationFilter('All');
   };
 
@@ -412,10 +402,10 @@ export const GeneratedReportsView: React.FC = () => {
           <span className="text-xs text-gray-500">{appliedFiltersCount} applied</span>
         </div>
 
-        {/* Row 1: Search, Date Range, Time Range */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Simplified Filters Grid: Search, Date, Status, Destination & Reset */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
           {/* Search Input */}
-          <div className="md:col-span-5">
+          <div className="lg:col-span-4">
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Search by report ID, shipment ID or invoice name
             </label>
@@ -424,14 +414,14 @@ export const GeneratedReportsView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search reports"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold focus:ring-2 focus:ring-ups-gold/20 outline-none text-xs transition-all placeholder:text-gray-400"
+                placeholder="Search by ID, shipment, or invoice..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all placeholder:text-gray-400"
               />
             </div>
           </div>
 
           {/* Date Range Dropdown */}
-          <div className="md:col-span-4">
+          <div className="lg:col-span-3">
             <label className="block text-xs font-medium text-gray-600 mb-1">Date range</label>
             <div className="relative">
               <select
@@ -444,60 +434,13 @@ export const GeneratedReportsView: React.FC = () => {
                 <option value="Yesterday">Yesterday</option>
                 <option value="Last 7 Days">Last 7 Days</option>
                 <option value="Last 30 Days">Last 30 Days</option>
-                <option value="Custom">Custom</option>
               </select>
               <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-            {/* Quick date links */}
-            <div className="text-[11px] text-gray-400 mt-1 flex flex-wrap gap-1.5">
-              <button onClick={() => setDateRange('Today')} className="hover:text-ups-brown">
-                Today
-              </button>
-              <span>·</span>
-              <button onClick={() => setDateRange('Yesterday')} className="hover:text-ups-brown">
-                Yesterday
-              </button>
-              <span>·</span>
-              <button onClick={() => setDateRange('Last 7 Days')} className="hover:text-ups-brown">
-                Last 7 Days
-              </button>
-              <span>·</span>
-              <button onClick={() => setDateRange('Last 30 Days')} className="hover:text-ups-brown">
-                Last 30 Days
-              </button>
-              <span>·</span>
-              <button onClick={() => setDateRange('Custom')} className="hover:text-ups-brown">
-                Custom
-              </button>
-            </div>
           </div>
 
-          {/* Time Range */}
-          <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Time range</label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Select time"
-                value={fromTime}
-                onChange={(e) => setFromTime(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs focus:border-ups-gold outline-none placeholder:text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Select time"
-                value={toTime}
-                onChange={(e) => setToTime(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs focus:border-ups-gold outline-none placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Status, Origin, Destination, Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end pt-1">
           {/* Status Dropdown */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-2">
             <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
             <div className="relative">
               <select
@@ -505,7 +448,7 @@ export const GeneratedReportsView: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white appearance-none"
               >
-                <option value="All">All</option>
+                <option value="All">All statuses</option>
                 <option value="Passed">Passed</option>
                 <option value="Needs Review">Needs Review</option>
                 <option value="Failed">Failed</option>
@@ -514,58 +457,34 @@ export const GeneratedReportsView: React.FC = () => {
             </div>
           </div>
 
-          {/* Origin Country */}
-          <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Origin country</label>
-            <div className="relative">
-              <select
-                value={originFilter}
-                onChange={(e) => setOriginFilter(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white appearance-none"
-              >
-                <option value="All">All</option>
-                <option value="USA">USA</option>
-                <option value="India">India</option>
-                <option value="Germany">Germany</option>
-                <option value="China">China</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
-
           {/* Destination Country */}
-          <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Destination country</label>
+          <div className="lg:col-span-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Destination</label>
             <div className="relative">
               <select
                 value={destinationFilter}
                 onChange={(e) => setDestinationFilter(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-ups-gold outline-none text-xs transition-all bg-white appearance-none"
               >
-                <option value="All">All</option>
-                <option value="CAN">CAN (Canada)</option>
-                <option value="MEX">MEX (Mexico)</option>
-                <option value="GBR">GBR (United Kingdom)</option>
+                <option value="All">All destinations</option>
+                <option value="CAN">Canada (CAN)</option>
+                <option value="MEX">Mexico (MEX)</option>
+                <option value="GBR">United Kingdom (GBR)</option>
                 <option value="USA">USA</option>
               </select>
               <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
-          {/* Filter Action Buttons */}
-          <div className="md:col-span-3 flex items-center space-x-2">
-            <button
-              onClick={() => {}}
-              className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs shadow-sm transition-colors text-center"
-            >
-              Apply Filters
-            </button>
+          {/* Clear Button */}
+          <div className="lg:col-span-1">
             <button
               onClick={handleClearFilters}
-              className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-sm transition-colors inline-flex items-center justify-center gap-1.5"
+              title="Reset all filters"
+              className="w-full py-2.5 px-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-sm transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5 text-gray-500" />
-              <span>Clear All</span>
+              <span className="hidden sm:inline lg:hidden">Clear</span>
             </button>
           </div>
         </div>

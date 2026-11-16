@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   AlertCircle,
   AlertTriangle,
   RefreshCw,
   Download,
   ArrowRight,
-  SplitSquareVertical,
   Wrench
 } from 'lucide-react';
 import { useShipment } from '../../context/ShipmentContext';
 import { Badge } from '../common/Badge';
-import { ManualEditModal } from '../common/ManualEditModal';
 import { ValidationIssue } from '../../types';
 
 export const Step2ValidationSummary: React.FC = () => {
@@ -20,27 +18,17 @@ export const Step2ValidationSummary: React.FC = () => {
     criticalCount,
     warningsCount,
     setStep,
-    setReviewSubView,
     setSelectedIssueId,
-    editManually,
     triggerRevalidation,
     isValidating
   } = useShipment();
-
-  const [editingIssue, setEditingIssue] = useState<ValidationIssue | null>(null);
 
   // Top 3 issues (sorted highest priority first: criticals first, then warnings)
   const top3Issues = issues.slice(0, 3);
 
   const handleFixClick = (issue: ValidationIssue) => {
     setSelectedIssueId(issue.id);
-    // User can either edit directly or jump into the interactive split workbench
-    setEditingIssue(issue);
-  };
-
-  const handleOpenWorkbench = (issueId?: string) => {
-    if (issueId) setSelectedIssueId(issueId);
-    setReviewSubView('workbench');
+    setStep(3); // Navigate directly to Review & Fix workbench
   };
 
   const handleDownloadReport = () => {
@@ -66,31 +54,20 @@ ${issues.map((i) => `- [${i.severity.toUpperCase()}] ${i.displayName}: ${i.descr
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Breadcrumb Navigation & View Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
-        <div className="flex items-center space-x-1.5">
-          <span
-            onClick={() => setStep(1)}
-            className="hover:text-gray-900 cursor-pointer font-medium"
-          >
-            Shipments
-          </span>
-          <span>/</span>
-          <span className="font-semibold text-gray-800">
-            #{shipmentDetails.shipmentNumber}
-          </span>
-          <span>/</span>
-          <span className="text-gray-500">Review & fix</span>
-        </div>
-
-        {/* View Switcher Button */}
-        <button
-          onClick={() => handleOpenWorkbench()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 font-semibold text-xs border border-amber-200 transition-colors w-fit"
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center space-x-1.5 text-xs text-gray-500">
+        <span
+          onClick={() => setStep(1)}
+          className="hover:text-gray-900 cursor-pointer font-medium"
         >
-          <SplitSquareVertical className="w-3.5 h-3.5" />
-          <span>Switch to Interactive Document Split-View</span>
-        </button>
+          Shipments
+        </span>
+        <span>/</span>
+        <span className="font-semibold text-gray-800">
+          #{shipmentDetails.shipmentNumber}
+        </span>
+        <span>/</span>
+        <span className="text-gray-500">AI validation</span>
       </div>
 
       {/* Page Title */}
@@ -197,20 +174,13 @@ ${issues.map((i) => `- [${i.severity.toUpperCase()}] ${i.displayName}: ${i.descr
                 </div>
 
                 {/* Fix Button on Right */}
-                <div className="flex flex-row md:flex-col gap-2 self-start md:self-center">
+                <div className="self-start md:self-center">
                   <button
                     onClick={() => handleFixClick(issue)}
                     className="inline-flex items-center justify-center gap-1.5 px-6 py-2 rounded-xl bg-white border border-gray-300 hover:border-ups-gold hover:bg-amber-50/50 text-gray-800 font-bold text-sm shadow-sm transition-all"
                   >
                     <Wrench className="w-3.5 h-3.5 text-ups-gold-dark" />
                     <span>Fix</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleOpenWorkbench(issue.id)}
-                    className="text-xs text-gray-500 hover:text-ups-brown underline text-center"
-                  >
-                    View in workbench
                   </button>
                 </div>
               </div>
@@ -247,31 +217,20 @@ ${issues.map((i) => `- [${i.severity.toUpperCase()}] ${i.displayName}: ${i.descr
         <div className="flex items-center gap-2 text-xs text-gray-600 text-center md:text-left">
           <Badge variant="blocking" />
           <span>
-            Continue will open the next review step. Critical issues remain unresolved and must be reviewed before submission.
+            Critical issues remain unresolved. Click Review & Fix to resolve discrepancies before submission.
           </span>
         </div>
 
-        {/* Right CTA Continue Button */}
+        {/* Right CTA Button: Navigates straight to Step 3 (Review & Fix) */}
         <button
           type="button"
-          onClick={() => {
-            // Advances to the interactive workbench / deep dive review step
-            setReviewSubView('workbench');
-          }}
+          onClick={() => setStep(3)}
           className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-ups-gold hover:bg-ups-gold-hover text-ups-brown font-extrabold text-sm shadow-md transition-all active:scale-95"
         >
-          <span>Continue</span>
+          <span>Review & Fix</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
-
-      {/* Manual Edit Modal */}
-      <ManualEditModal
-        isOpen={!!editingIssue}
-        issue={editingIssue || undefined}
-        onClose={() => setEditingIssue(null)}
-        onSave={(issueId, newVal) => editManually(issueId, newVal)}
-      />
     </div>
   );
 };

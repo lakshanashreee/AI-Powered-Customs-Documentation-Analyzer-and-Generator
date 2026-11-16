@@ -16,8 +16,6 @@ import {
 interface ShipmentContextType {
   currentStep: number;
   setStep: (step: number) => void;
-  reviewSubView: 'summary' | 'workbench';
-  setReviewSubView: (v: 'summary' | 'workbench') => void;
   activeNavTab: 'shipments' | 'reports' | 'help' | 'account';
   setActiveNavTab: (tab: 'shipments' | 'reports' | 'help' | 'account') => void;
 
@@ -64,7 +62,6 @@ const ShipmentContext = createContext<ShipmentContextType | undefined>(undefined
 
 export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [reviewSubView, setReviewSubView] = useState<'summary' | 'workbench'>('summary');
   const [activeNavTab, setActiveNavTab] = useState<'shipments' | 'reports' | 'help' | 'account'>('shipments');
 
   const [shipmentDetails, setShipmentDetails] = useState<ShipmentDetails>(INITIAL_SHIPMENT_DETAILS);
@@ -267,7 +264,6 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const resetDemo = () => {
     setCurrentStep(1);
-    setReviewSubView('summary');
     setShipmentDetails(INITIAL_SHIPMENT_DETAILS);
     setDocuments(INITIAL_DOCUMENTS);
     setIssues(INITIAL_ISSUES);
@@ -283,8 +279,6 @@ export const ShipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         currentStep,
         setStep: setCurrentStep,
-        reviewSubView,
-        setReviewSubView,
         activeNavTab,
         setActiveNavTab,
 
