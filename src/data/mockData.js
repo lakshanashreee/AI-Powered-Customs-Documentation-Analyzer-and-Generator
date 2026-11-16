@@ -1,0 +1,293 @@
+export const initialShipmentForm = {
+  productDescription: "Leather Handbags",
+  quantity: 100,
+  totalWeight: 118,
+  length: 40,
+  width: 20,
+  height: 20,
+  declaredValue: 4800,
+  currency: "USD",
+  originCountry: "India",
+  destinationCountry: "USA",
+};
+
+export const initialUploadedFiles = [
+  {
+    id: "f1",
+    name: "invoice_0412.pdf",
+    size: "1.4 MB",
+    status: "Extracted",
+    progress: 100,
+    type: "commercial_invoice",
+  },
+  {
+    id: "f2",
+    name: "packing_list.jpg",
+    size: "820 KB",
+    status: "Processing",
+    progress: 60,
+    type: "packing_list",
+  },
+];
+
+export const sampleValidationIssues = [
+  {
+    id: "iss-1",
+    severity: "Critical",
+    field: "Declared value",
+    invoiceValue: "$4,800",
+    enteredValue: "$3,900",
+    status: "open",
+    title: "Declared value mismatch",
+    explanation:
+      "The invoice total is $4,800, but the entered declared value is $3,900. This difference may lead to customs questions or delays. Confirm the invoice total before updating.",
+    whyItMatters:
+      "Customs may question or delay the shipment if the declared value does not match the invoice total.",
+    suggestedCorrection: "Update declared value to $4,800",
+    source: "invoice_0412.pdf · Invoice total",
+    correctedValue: "$4,800",
+  },
+  {
+    id: "iss-2",
+    severity: "Critical",
+    field: "HS code",
+    invoiceValue: "Missing",
+    enteredValue: "—",
+    status: "open",
+    title: "Harmonized System (HS) Code Missing",
+    explanation:
+      "The HS code is missing from the invoice and has not been entered. Add the correct HS code for this shipment.",
+    whyItMatters:
+      "Missing HS codes can block customs submission and delay clearance until the classification is confirmed.",
+    suggestedCorrection: "Add the correct HS code from the invoice or supplier documentation before continuing.",
+    source: "invoice_0412.pdf · Product classification",
+    correctedValue: "4202.21 (Leather Handbags)",
+  },
+  {
+    id: "iss-3",
+    severity: "Warning",
+    field: "Gross weight",
+    invoiceValue: "118 kg",
+    enteredValue: "96 kg",
+    status: "open",
+    title: "Gross Weight Discrepancy",
+    explanation:
+      "The invoice shows 118 kg, but the entered gross weight is 96 kg. Review and confirm the correct weight.",
+    whyItMatters:
+      "Weight mismatches can affect freight costs, customs calculations, and shipment compliance.",
+    suggestedCorrection: "Review the invoice and shipment details, then update the gross weight to 118 kg if confirmed.",
+    source: "invoice_0412.pdf · Summary weight",
+    correctedValue: "96 kg retained (Exception)",
+  },
+  {
+    id: "iss-4",
+    severity: "Warning",
+    field: "Quantity",
+    invoiceValue: "240",
+    enteredValue: "204",
+    status: "open",
+    title: "Quantity Discrepancy",
+    explanation:
+      "The line item quantity on the commercial invoice is 240 units, but entered shipment quantity is 204.",
+    whyItMatters: "Mismatched units trigger physical customs inspection and clearance hold.",
+    suggestedCorrection: "Update shipment quantity to 240 units.",
+    source: "invoice_0412.pdf · Line items table",
+    correctedValue: "240 units",
+  },
+  {
+    id: "iss-5",
+    severity: "Warning",
+    field: "Description",
+    invoiceValue: "Too generic",
+    enteredValue: '"Clothes"',
+    status: "open",
+    title: "Vague Product Description",
+    explanation:
+      'The description "Clothes" is overly generic for international customs declaration. Specific garment type is required.',
+    whyItMatters: "Vague descriptions risk tariff penalty and immediate documentation rejection.",
+    suggestedCorrection: 'Change to "Women\'s 100% Genuine Leather Handbags"',
+    source: "invoice_0412.pdf · Product description",
+    correctedValue: "100% Genuine Leather Handbags",
+  },
+  {
+    id: "iss-6",
+    severity: "Passed",
+    field: "Consignee address",
+    invoiceValue: "Match",
+    enteredValue: "Match",
+    status: "passed",
+    title: "Consignee Address Verified",
+    explanation: "Recipient entity name and tax jurisdiction match destination customs registry.",
+    whyItMatters: "Ensures delivery routing is valid.",
+    suggestedCorrection: "No action needed.",
+    source: "invoice_0412.pdf · Consignee block",
+    correctedValue: "Matched",
+  },
+];
+
+export const sampleReports = [
+  {
+    id: "RPT-0412",
+    shipmentId: "#0412",
+    invoiceName: "invoice_0412.pdf",
+    dateTime: "2026-11-05 09:42",
+    route: "USA → CAN",
+    origin: "USA",
+    destination: "CAN",
+    status: "Passed",
+    issuesCount: 0,
+    readiness: 94,
+    seller: "Northwind Apparel",
+    buyer: "Monterrey Retail S.A.",
+    lineItems: 1,
+  },
+  {
+    id: "RPT-0411",
+    shipmentId: "#0411",
+    invoiceName: "invoice_0411.pdf",
+    dateTime: "2026-11-05 08:17",
+    route: "USA → MEX",
+    origin: "USA",
+    destination: "MEX",
+    status: "Needs Review",
+    issuesCount: 3,
+    readiness: 68,
+    seller: "Northwind Apparel",
+    buyer: "Monterrey Retail S.A.",
+    lineItems: 3,
+  },
+  {
+    id: "RPT-0410",
+    shipmentId: "#0410",
+    invoiceName: "invoice_0410.pdf",
+    dateTime: "2026-11-04 16:54",
+    route: "USA → CAN",
+    origin: "USA",
+    destination: "CAN",
+    status: "Failed",
+    issuesCount: 2,
+    readiness: 45,
+    seller: "Apex Logistics Ltd",
+    buyer: "Ontario Express",
+    lineItems: 2,
+  },
+  {
+    id: "RPT-0409",
+    shipmentId: "#0409",
+    invoiceName: "invoice_0409.pdf",
+    dateTime: "2026-11-04 14:21",
+    route: "USA → GBR",
+    origin: "USA",
+    destination: "GBR",
+    status: "Passed",
+    issuesCount: 0,
+    readiness: 98,
+    seller: "Global Tech Imports",
+    buyer: "London Distribution Hub",
+    lineItems: 4,
+  },
+  {
+    id: "RPT-0408",
+    shipmentId: "#0408",
+    invoiceName: "invoice_0408.pdf",
+    dateTime: "2026-11-04 11:06",
+    route: "USA → CAN",
+    origin: "USA",
+    destination: "CAN",
+    status: "Needs Review",
+    issuesCount: 1,
+    readiness: 79,
+    seller: "Eastern Craft Exports",
+    buyer: "Vancouver Trading Co.",
+    lineItems: 2,
+  },
+];
+
+export const sampleFAQs = [
+  {
+    category: "Getting Started",
+    question: "How do I get started with CrossBorder Ready?",
+    answer:
+      "Simply navigate to the Shipments tab, click 'New Shipment Check', upload your commercial invoice (PDF, JPG, or PNG), enter your shipment parameters, and click 'Run AI Validation'. Our engine extracts fields, cross-checks arithmetic and customs rules, and gives you a step-by-step review to fix errors before official submission.",
+  },
+  {
+    category: "Document Uploads",
+    question: "Which file formats are supported?",
+    answer:
+      "We currently support PDF (including multi-page scanned documents), JPG/JPEG, PNG, and TIFF. Support for DOCX and XLSX spreadsheets can also be processed via our document conversion service.",
+  },
+  {
+    category: "AI Validation",
+    question: "How does AI validation work?",
+    answer:
+      "AI extracts key information from your invoice using vision-language models and compares it with your shipment details. It checks required fields, calculates mathematical values (e.g., Quantity × Unit Price = Total), and highlights inconsistencies for you to review and correct before submission.",
+  },
+  {
+    category: "AI Validation",
+    question: "Why was my invoice flagged?",
+    answer:
+      "An invoice may be flagged when required information is missing or doesn't match your shipment details. Common reasons include: missing HS codes or incomplete consignee addresses, declared values differing from the invoice total, or inconsistent quantities, dimensions, or weights. Open validation results to review each highlighted field.",
+  },
+  {
+    category: "AI Validation",
+    question: "How can I correct extracted fields?",
+    answer:
+      "On the Review & Fix screen, select any flagged issue. You can click 'Accept fix' to automatically apply the AI-recommended correction, or click 'Edit manually' to type in the exact verified value.",
+  },
+  {
+    category: "Customs Documentation",
+    question: "How are dimensions and weights validated?",
+    answer:
+      "The system checks the gross and net weight declared on the commercial invoice against the actual physical weights entered during shipment booking and packing lists. Mismatches greater than regulatory tolerance thresholds are flagged.",
+  },
+  {
+    category: "Reports & Downloads",
+    question: "How do I download generated reports?",
+    answer:
+      "Once you review your shipment on Step 4 (or anytime from the Reports tab), click 'Download PDF' for a formal, audit-ready compliance certificate or 'Download CSV' for tabular data integration.",
+  },
+  {
+    category: "Troubleshooting",
+    question: "What happens if required fields are missing?",
+    answer:
+      "The system marks missing mandatory fields as Critical issues. Critical issues prevent submission until either the missing data is supplied or a formal exception justification is recorded in the compliance log.",
+  },
+];
+
+export const userProfile = {
+  name: "Priya Sharma",
+  title: "Logistics Manager - Meridian Trade Ltd.",
+  email: "priya.sharma@meridiantrade.co.uk",
+  phone: "+44 20 7946 0285",
+  language: "English (United Kingdom)",
+  timezone: "(GMT+00:00) London",
+  verified: true,
+  stats: {
+    invoicesChecked: 248,
+    errorsFixed: 86,
+    reportsSubmitted: 128,
+  },
+  company: {
+    name: "Meridian Trade Ltd.",
+    upsAccountNumber: "M8R421",
+    address: "12 Harbour Way, London E14 2AB",
+    country: "United Kingdom",
+    eoriNumber: "GB123456789000",
+    ein: "Not applicable",
+    iecGst: "Not applicable",
+    defaultShipperName: "Meridian Trade Ltd.",
+    defaultShipperContact: "Priya Sharma · +44 20 7946 0285",
+    defaultCurrency: "GBP — British Pound",
+    defaultIncoterms: "DAP — Delivered at Place",
+    defaultCountryOfOrigin: "United Kingdom",
+  },
+  preferences: {
+    strictness: "Standard",
+    autoValidateOnUpload: true,
+    highlightMissingFields: true,
+    flagValueAndCurrencyMismatches: true,
+    checkHsCodeAndOrigin: true,
+    showAiExplanations: true,
+    defaultReportFormat: "PDF",
+  },
+};
